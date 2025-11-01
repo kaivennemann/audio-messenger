@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { convertTextToVoiceHz, VOICE_CONFIG } from '../conversion/parser/voice';
-import { convertTextToUltrasonicHz, ULTRASONIC_CONFIG } from '../conversion/parser/ultrasonic';
+import { convertTextToVoiceHz, VOICE_CONFIG, voiceSchema } from '../conversion/parser/voice';
+import { convertTextToUltrasonicHz, ULTRASONIC_CONFIG, ultrasonicSchema } from '../conversion/parser/ultrasonic';
 import { EnhancedAudioPlayer } from '../conversion/player';
 
 export default function VoiceTransmitter({ schemaType = 'voice' }) {
   const isUltrasonic = schemaType === 'ultrasonic';
   const config = isUltrasonic ? ULTRASONIC_CONFIG : VOICE_CONFIG;
   const convertFunction = isUltrasonic ? convertTextToUltrasonicHz : convertTextToVoiceHz;
+  const validHz = isUltrasonic ? ultrasonicSchema.valid_hz : voiceSchema.valid_hz;
 
   const [message, setMessage] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -36,6 +37,7 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
         toneDuration: toneDuration,
         toneGap: toneGap,
         volume: 0.3,
+        validHz: validHz,
       });
 
       await playerRef.current.initialize();
@@ -55,6 +57,13 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
         await playerRef.current.playWithRepetition(frequencies, 2, onProgress, onComplete);
       } else if (playbackMode === 'checksum') {
         await playerRef.current.playWithChecksum(frequencies, onProgress, onComplete);
+      } else if (playbackMode === 'ecc') {
+        await playerRef.current.playWithErrorCorrection(
+          frequencies,
+          { repetitions: 3, addCRC: true, interleave: true },
+          onProgress,
+          onComplete
+        );
       }
     } catch (error) {
       console.error('Error playing message:', error);
@@ -375,23 +384,35 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
             onClick={() => setPlaybackMode('checksum')}
             disabled={isPlaying}
           >
-            Checksum
+            CRC16
+          </button>
+          <button
+            className={`mode-button ${playbackMode === 'ecc' ? 'active' : ''}`}
+            onClick={() => setPlaybackMode('ecc')}
+            disabled={isPlaying}
+          >
+            🛡️ ECC
           </button>
         </div>
 
         {playbackMode === 'basic' && (
           <div className="mode-description">
-            Standard voice transmission - optimized for speech frequencies
+            ⚡ Fast transmission - Use in quiet environments
           </div>
         )}
         {playbackMode === 'repeat' && (
           <div className="mode-description">
-            Each tone repeated twice - better for noisy environments
+            🔁 Repetition code - Each tone 2x for reliability (2x duration)
           </div>
         )}
         {playbackMode === 'checksum' && (
           <div className="mode-description">
-            Adds validation tone - helps verify transmission integrity
+            ✓ CRC16 checksum - Validates data integrity with 2 extra tones
+          </div>
+        )}
+        {playbackMode === 'ecc' && (
+          <div className="mode-description">
+            🛡️ Full error correction - 3x repetition + CRC16 + interleaving. Best reliability! (3x duration)
           </div>
         )}
 

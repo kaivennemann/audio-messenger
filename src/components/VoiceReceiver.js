@@ -4,12 +4,14 @@ import {
   processVoiceDetections,
   convertVoiceHzToText,
   VOICE_CONFIG,
+  voiceSchema,
 } from '../conversion/parser/voice';
 import {
   findClosestUltrasonicFrequency,
   processUltrasonicDetections,
   convertUltrasonicHzToText,
   ULTRASONIC_CONFIG,
+  ultrasonicSchema,
 } from '../conversion/parser/ultrasonic';
 
 export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' }) {
@@ -18,12 +20,16 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
   const findClosestFrequency = isUltrasonic ? findClosestUltrasonicFrequency : findClosestVoiceFrequency;
   const processDetections = isUltrasonic ? processUltrasonicDetections : processVoiceDetections;
   const convertHzToText = isUltrasonic ? convertUltrasonicHzToText : convertVoiceHzToText;
+  const validHz = isUltrasonic ? ultrasonicSchema.valid_hz : voiceSchema.valid_hz;
+
   const [isRecording, setIsRecording] = useState(false);
   const [peakFreq, setPeakFreq] = useState(null);
   const [validFreq, setValidFreq] = useState(null);
   const [peakAmp, setPeakAmp] = useState(0);
   const [detectedMessage, setDetectedMessage] = useState('');
   const [detectionBuffer, setDetectionBuffer] = useState([]);
+  const [decodingMode, setDecodingMode] = useState('auto');
+  const [eccStatus, setEccStatus] = useState(null);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -66,7 +72,7 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
     detectionsRef.current = [];
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
@@ -76,13 +82,57 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
 
     // Process all detections
     if (detectionsRef.current.length > 0) {
-      const frequencies = processDetections(detectionsRef.current);
-      const message = convertHzToText(frequencies);
+      let frequencies = processDetections(detectionsRef.current);
+      let message = '';
+      let status = null;
+
+      // Try error correction decoding if enabled
+      if (decodingMode === 'ecc' || decodingMode === 'auto') {
+        try {
+          const ec = await import('../conversion/errorCorrection.js');
+
+          // Try ECC decoding (deinterleave + remove error correction)
+          let decodedFreqs = frequencies;
+
+          // Try deinterleaving
+          const deinterleaved = ec.deinterleave(frequencies, 4);
+
+          // Try removing error correction
+          const result = ec.removeErrorCorrection(deinterleaved, validHz, {
+            repetitions: 3,
+            addCRC: true,
+            addParity: false,
+          });
+
+          if (result.valid) {
+            frequencies = result.data;
+            status = {
+              mode: 'ECC',
+              valid: true,
+              corrected: result.corrected,
+            };
+            console.log('✅ ECC decoding successful', result);
+          } else if (decodingMode === 'auto') {
+            // Fall back to basic decoding
+            console.log('⚠️ CRC failed, trying basic decoding');
+            status = { mode: 'Basic', valid: false, corrected: false };
+          }
+        } catch (error) {
+          console.warn('ECC decoding failed:', error);
+          if (decodingMode === 'auto') {
+            status = { mode: 'Basic', valid: null, corrected: false };
+          }
+        }
+      }
+
+      message = convertHzToText(frequencies);
 
       if (message) {
         setDetectedMessage(message);
+        setEccStatus(status);
       } else {
         setDetectedMessage('[No message detected]');
+        setEccStatus(null);
       }
 
       if (onMessageReceived && message) {
@@ -91,8 +141,12 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
 
       console.log(`Processed ${schemaType} frequencies:`, frequencies);
       console.log('Decoded message:', message);
+      if (status) {
+        console.log('ECC Status:', status);
+      }
     } else {
       setDetectedMessage('[No valid tones detected]');
+      setEccStatus(null);
     }
 
     setIsRecording(false);
@@ -355,6 +409,32 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
           font-family: monospace;
         }
 
+        .ecc-status {
+          margin-top: 12px;
+          display: flex;
+          justify-content: center;
+        }
+
+        .ecc-badge {
+          display: inline-block;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 0.8em;
+          font-weight: 600;
+        }
+
+        .ecc-badge.ecc-valid {
+          background: #d1fae5;
+          color: #065f46;
+          border: 1px solid #10b981;
+        }
+
+        .ecc-badge.ecc-invalid {
+          background: #fee2e2;
+          color: #991b1b;
+          border: 1px solid #ef4444;
+        }
+
         .status-indicator {
           display: flex;
           align-items: center;
@@ -493,6 +573,76 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
         <div className="message-label">Decoded Message:</div>
         <div className="message-content">
           {detectedMessage || (isRecording ? `Listening for ${schemaType} frequencies...` : 'Click microphone to start receiving')}
+        </div>
+        {eccStatus && (
+          <div className="ecc-status">
+            {eccStatus.mode === 'ECC' && eccStatus.valid && (
+              <span className="ecc-badge ecc-valid">
+                ✅ ECC: {eccStatus.corrected ? 'Errors corrected' : 'No errors'}
+              </span>
+            )}
+            {eccStatus.mode === 'Basic' && eccStatus.valid === false && (
+              <span className="ecc-badge ecc-invalid">
+                ⚠️ CRC failed - using basic decoding
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mode-selector-container" style={{ marginTop: '15px', marginBottom: '15px' }}>
+        <div className="mode-label" style={{ fontSize: '0.85em', color: '#666', marginBottom: '8px' }}>
+          Decoding Mode:
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className={`mode-btn ${decodingMode === 'auto' ? 'active' : ''}`}
+            onClick={() => setDecodingMode('auto')}
+            disabled={isRecording}
+            style={{
+              flex: 1,
+              padding: '8px',
+              border: decodingMode === 'auto' ? '2px solid #10b981' : '2px solid #e0e0e0',
+              borderRadius: '6px',
+              background: decodingMode === 'auto' ? '#d1fae5' : 'white',
+              cursor: isRecording ? 'not-allowed' : 'pointer',
+              fontSize: '0.85em',
+            }}
+          >
+            🔄 Auto
+          </button>
+          <button
+            className={`mode-btn ${decodingMode === 'ecc' ? 'active' : ''}`}
+            onClick={() => setDecodingMode('ecc')}
+            disabled={isRecording}
+            style={{
+              flex: 1,
+              padding: '8px',
+              border: decodingMode === 'ecc' ? '2px solid #10b981' : '2px solid #e0e0e0',
+              borderRadius: '6px',
+              background: decodingMode === 'ecc' ? '#d1fae5' : 'white',
+              cursor: isRecording ? 'not-allowed' : 'pointer',
+              fontSize: '0.85em',
+            }}
+          >
+            🛡️ ECC Only
+          </button>
+          <button
+            className={`mode-btn ${decodingMode === 'basic' ? 'active' : ''}`}
+            onClick={() => setDecodingMode('basic')}
+            disabled={isRecording}
+            style={{
+              flex: 1,
+              padding: '8px',
+              border: decodingMode === 'basic' ? '2px solid #10b981' : '2px solid #e0e0e0',
+              borderRadius: '6px',
+              background: decodingMode === 'basic' ? '#d1fae5' : 'white',
+              cursor: isRecording ? 'not-allowed' : 'pointer',
+              fontSize: '0.85em',
+            }}
+          >
+            ⚡ Basic
+          </button>
         </div>
       </div>
 

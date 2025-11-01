@@ -127,6 +127,7 @@ export class EnhancedAudioPlayer extends AudioTonePlayer {
   constructor(options = {}) {
     super(options);
     this.strategy = options.strategy || 'basic';
+    this.validHz = options.validHz || [];
   }
 
   /**
@@ -144,14 +145,57 @@ export class EnhancedAudioPlayer extends AudioTonePlayer {
   }
 
   /**
-   * Play with checksum tones for validation
+   * Play with CRC16 checksum for validation
    */
   async playWithChecksum(frequencies, onProgress = null, onComplete = null) {
-    // Simple checksum: sum of all frequencies modulo valid_hz length
-    const checksum = frequencies.reduce((sum, freq) => sum + freq, 0) % 50;
-    const checksumFreq = 400 + (checksum * 155); // Map to valid range
+    // Import error correction dynamically
+    const { calculateCRC16, crcToFrequencyIndices } = await import('./errorCorrection.js');
 
-    const sequenceWithChecksum = [...frequencies, checksumFreq];
+    const crc = calculateCRC16(frequencies);
+    const crcIndices = crcToFrequencyIndices(crc, this.validHz.length);
+
+    // Add CRC as two frequency tones
+    const sequenceWithChecksum = [
+      ...frequencies,
+      this.validHz[crcIndices[0]],
+      this.validHz[crcIndices[1]]
+    ];
+
     await this.playSequence(sequenceWithChecksum, onProgress, onComplete);
+  }
+
+  /**
+   * Play with full error correction (repetition + CRC + interleaving)
+   */
+  async playWithErrorCorrection(frequencies, options = {}, onProgress = null, onComplete = null) {
+    const {
+      repetitions = 3,
+      addCRC = true,
+      interleave = true,
+    } = options;
+
+    // Import error correction dynamically
+    const ec = await import('./errorCorrection.js');
+
+    let encodedFrequencies = ec.addErrorCorrection(frequencies, this.validHz, {
+      repetitions,
+      addCRC,
+      addParity: false,
+    });
+
+    // Interleave for burst error resistance
+    if (interleave) {
+      encodedFrequencies = ec.interleave(encodedFrequencies, 4);
+    }
+
+    console.log('Error correction applied:', {
+      original: frequencies.length,
+      encoded: encodedFrequencies.length,
+      repetitions,
+      addCRC,
+      interleave,
+    });
+
+    await this.playSequence(encodedFrequencies, onProgress, onComplete);
   }
 }
