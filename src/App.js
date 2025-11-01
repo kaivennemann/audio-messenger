@@ -25,6 +25,36 @@ export default function App() {
       content: 'Each message is rendered using the Message component.',
       sender: 'Alice',
     },
+    {
+      id: 3,
+      content: 'Hello! This is the first message.',
+      sender: 'Alice',
+    },
+    {
+      id: 4,
+      content: 'This is a sample message stack component.',
+      sender: 'Bob',
+    },
+    {
+      id: 5,
+      content: 'Each message is rendered using the Message component.',
+      sender: 'Alice',
+    },
+    {
+      id: 6,
+      content: 'Hello! This is the first message.',
+      sender: 'Alice',
+    },
+    {
+      id: 7,
+      content: 'This is a sample message stack component.',
+      sender: 'Bob',
+    },
+    {
+      id: 8,
+      content: 'Each message is rendered using the Message component.',
+      sender: 'Alice',
+    },
   ]);
 
   async function sendMessage(msg) {
@@ -39,6 +69,9 @@ export default function App() {
 
   return (
     <div className="app">
+      <header className="header">
+        <h1 className="header-title">HzMessenger</h1>
+      </header>
       <MainPage
         username={username}
         messagingState={messagingState}
