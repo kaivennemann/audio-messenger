@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { convertFromTextToHz } from '../conversion/parser/basic';
-import { EnhancedAudioPlayer } from '../conversion/player';
+import { AudioTonePlayer } from '../conversion/player';
 
 export default function AudioTransmitter() {
   const [message, setMessage] = useState('');
@@ -29,7 +29,7 @@ export default function AudioTransmitter() {
       setIsPlaying(true);
 
       // Create player with current settings
-      playerRef.current = new EnhancedAudioPlayer({
+      playerRef.current = new AudioTonePlayer({
         toneDuration: toneDuration,
         toneGap: toneGap,
         volume: 0.3,
@@ -48,11 +48,24 @@ export default function AudioTransmitter() {
 
       // Play based on selected mode
       if (playbackMode === 'basic') {
-        await playerRef.current.playSequence(frequencies, onProgress, onComplete);
+        await playerRef.current.playSequence(
+          frequencies,
+          onProgress,
+          onComplete
+        );
       } else if (playbackMode === 'repeat') {
-        await playerRef.current.playWithRepetition(frequencies, 2, onProgress, onComplete);
+        await playerRef.current.playWithRepetition(
+          frequencies,
+          2,
+          onProgress,
+          onComplete
+        );
       } else if (playbackMode === 'checksum') {
-        await playerRef.current.playWithChecksum(frequencies, onProgress, onComplete);
+        await playerRef.current.playWithChecksum(
+          frequencies,
+          onProgress,
+          onComplete
+        );
       }
     } catch (error) {
       console.error('Error playing message:', error);
@@ -328,7 +341,7 @@ export default function AudioTransmitter() {
           className="message-input"
           placeholder="Type your message here..."
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={e => setMessage(e.target.value)}
           disabled={isPlaying}
         />
         <div className="char-count">{message.length} characters</div>
@@ -362,7 +375,8 @@ export default function AudioTransmitter() {
 
         {playbackMode === 'basic' && (
           <div className="mode-description">
-            Standard transmission - fastest but less reliable in noisy environments
+            Standard transmission - fastest but less reliable in noisy
+            environments
           </div>
         )}
         {playbackMode === 'repeat' && (
@@ -372,7 +386,8 @@ export default function AudioTransmitter() {
         )}
         {playbackMode === 'checksum' && (
           <div className="mode-description">
-            Adds validation tone at the end - helps verify transmission integrity
+            Adds validation tone at the end - helps verify transmission
+            integrity
           </div>
         )}
 
@@ -386,7 +401,7 @@ export default function AudioTransmitter() {
               type="number"
               className="setting-input"
               value={toneDuration}
-              onChange={(e) => setToneDuration(parseInt(e.target.value) || 200)}
+              onChange={e => setToneDuration(parseInt(e.target.value) || 200)}
               min="50"
               max="1000"
               step="50"
@@ -399,7 +414,7 @@ export default function AudioTransmitter() {
               type="number"
               className="setting-input"
               value={toneGap}
-              onChange={(e) => setToneGap(parseInt(e.target.value) || 50)}
+              onChange={e => setToneGap(parseInt(e.target.value) || 50)}
               min="10"
               max="500"
               step="10"
@@ -444,7 +459,9 @@ export default function AudioTransmitter() {
       <div className="info-section">
         <div className="info-card">
           <div className="info-card-label">Estimated Duration</div>
-          <div className="info-card-value">{getEstimatedDuration().toFixed(1)}s</div>
+          <div className="info-card-value">
+            {getEstimatedDuration().toFixed(1)}s
+          </div>
         </div>
         <div className="info-card">
           <div className="info-card-label">Total Tones</div>

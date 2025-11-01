@@ -17,7 +17,8 @@ export class AudioTonePlayer {
    */
   async initialize() {
     if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.audioContext = new (window.AudioContext ||
+        window.webkitAudioContext)();
     }
 
     // Resume context if suspended (browser autoplay policy)
@@ -49,7 +50,10 @@ export class AudioTonePlayer {
     const endTimeSeconds = startTime + duration / 1000;
 
     gainNode.gain.setValueAtTime(0, startTimeSeconds);
-    gainNode.gain.linearRampToValueAtTime(this.volume, startTimeSeconds + fadeTime);
+    gainNode.gain.linearRampToValueAtTime(
+      this.volume,
+      startTimeSeconds + fadeTime
+    );
     gainNode.gain.setValueAtTime(this.volume, endTimeSeconds - fadeTime);
     gainNode.gain.linearRampToValueAtTime(0, endTimeSeconds);
 
@@ -73,7 +77,8 @@ export class AudioTonePlayer {
     this.isPlaying = true;
     let currentTime = this.audioContext.currentTime + 0.1; // Small delay to start
 
-    const totalDuration = frequencies.length * (this.toneDuration + this.toneGap);
+    const totalDuration =
+      frequencies.length * (this.toneDuration + this.toneGap);
 
     frequencies.forEach((freq, index) => {
       currentTime = this.playTone(freq, this.toneDuration, currentTime);
@@ -81,11 +86,14 @@ export class AudioTonePlayer {
 
       // Schedule progress callback
       if (onProgress) {
-        setTimeout(() => {
-          if (this.isPlaying) {
-            onProgress(index + 1, frequencies.length);
-          }
-        }, (index + 1) * (this.toneDuration + this.toneGap));
+        setTimeout(
+          () => {
+            if (this.isPlaying) {
+              onProgress(index + 1, frequencies.length);
+            }
+          },
+          (index + 1) * (this.toneDuration + this.toneGap)
+        );
       }
     });
 
@@ -117,85 +125,5 @@ export class AudioTonePlayer {
    */
   estimateDuration(frequencies) {
     return frequencies.length * (this.toneDuration + this.toneGap);
-  }
-}
-
-/**
- * Enhanced player with different playback strategies
- */
-export class EnhancedAudioPlayer extends AudioTonePlayer {
-  constructor(options = {}) {
-    super(options);
-    this.strategy = options.strategy || 'basic';
-    this.validHz = options.validHz || [];
-  }
-
-  /**
-   * Play with error correction (repeat each tone)
-   */
-  async playWithRepetition(frequencies, repetitions = 2, onProgress = null, onComplete = null) {
-    const expandedFrequencies = [];
-    frequencies.forEach(freq => {
-      for (let i = 0; i < repetitions; i++) {
-        expandedFrequencies.push(freq);
-      }
-    });
-
-    await this.playSequence(expandedFrequencies, onProgress, onComplete);
-  }
-
-  /**
-   * Play with CRC16 checksum for validation
-   */
-  async playWithChecksum(frequencies, onProgress = null, onComplete = null) {
-    // Import error correction dynamically
-    const { calculateCRC16, crcToFrequencyIndices } = await import('./errorCorrection.js');
-
-    const crc = calculateCRC16(frequencies);
-    const crcIndices = crcToFrequencyIndices(crc, this.validHz.length);
-
-    // Add CRC as two frequency tones
-    const sequenceWithChecksum = [
-      ...frequencies,
-      this.validHz[crcIndices[0]],
-      this.validHz[crcIndices[1]]
-    ];
-
-    await this.playSequence(sequenceWithChecksum, onProgress, onComplete);
-  }
-
-  /**
-   * Play with full error correction (repetition + CRC + interleaving)
-   */
-  async playWithErrorCorrection(frequencies, options = {}, onProgress = null, onComplete = null) {
-    const {
-      repetitions = 3,
-      addCRC = true,
-      interleave = true,
-    } = options;
-
-    // Import error correction dynamically
-    const ec = await import('./errorCorrection.js');
-
-    let encodedFrequencies = ec.addErrorCorrection(frequencies, this.validHz, {
-      repetitions,
-      addCRC,
-      addParity: false,
-    });
-
-    // Interleave for burst error resistance
-    if (interleave) {
-      encodedFrequencies = ec.interleave(encodedFrequencies, 4);
-    }
-
-    console.log('Error correction applied:', {
-      original: frequencies.length,
-      encoded: encodedFrequencies.length,
-      repetitions,
-      addCRC,
-      interleave,
-    });
-
-    await this.playSequence(encodedFrequencies, onProgress, onComplete);
   }
 }

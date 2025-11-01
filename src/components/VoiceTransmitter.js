@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { convertFromTextToHz } from '../conversion/parser/basic.js';
 import { getSchema, getConfig } from '../conversion/parser/schemas.js';
-import { EnhancedAudioPlayer } from '../conversion/player.js';
+import { AudioTonePlayer } from '../conversion/player.js';
 
 export default function VoiceTransmitter({ schemaType = 'voice' }) {
   const schema = getSchema(schemaType);
@@ -32,7 +32,7 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
       setIsPlaying(true);
 
       if (!playerRef.current) {
-        playerRef.current = new EnhancedAudioPlayer({
+        playerRef.current = new AudioTonePlayer({
           toneDuration,
           toneGap,
           volume: 0.3,
@@ -64,14 +64,6 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
         case 'crc':
           await playerRef.current.playWithChecksum(
             frequencies,
-            onProgress,
-            onComplete
-          );
-          break;
-        case 'ecc':
-          await playerRef.current.playWithErrorCorrection(
-            frequencies,
-            { repetitions: 3, addCRC: true, interleave: true },
             onProgress,
             onComplete
           );

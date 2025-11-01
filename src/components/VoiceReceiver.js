@@ -76,46 +76,6 @@ export default function VoiceReceiver({
       let message = '';
       let status = null;
 
-      // Try error correction decoding if enabled
-      if (decodingMode === 'ecc' || decodingMode === 'auto') {
-        try {
-          const ec = await import('../conversion/errorCorrection.js');
-
-          // Try deinterleaving
-          const deinterleaved = ec.deinterleave(frequencies, 4);
-
-          // Try removing error correction
-          const result = ec.removeErrorCorrection(
-            deinterleaved,
-            schema.valid_hz,
-            {
-              repetitions: 3,
-              addCRC: true,
-              addParity: false,
-            }
-          );
-
-          if (result.valid) {
-            frequencies = result.data;
-            status = {
-              mode: 'ECC',
-              valid: true,
-              corrected: result.corrected,
-            };
-            console.log('✅ ECC decoding successful', result);
-          } else if (decodingMode === 'auto') {
-            // Fall back to basic decoding
-            console.log('⚠️ CRC failed, trying basic decoding');
-            status = { mode: 'Basic', valid: false, corrected: false };
-          }
-        } catch (error) {
-          console.warn('ECC decoding failed:', error);
-          if (decodingMode === 'auto') {
-            status = { mode: 'Basic', valid: null, corrected: false };
-          }
-        }
-      }
-
       message = convertFromHzToText(schema, frequencies);
 
       if (message) {
