@@ -84,11 +84,6 @@ function App() {
         }
       `}</style>
 
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <PageHeader className='page-header' />
-      </header>
-
       <div className="components-container">
         <div className="dual-mode">
           <div>
