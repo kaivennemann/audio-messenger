@@ -20,11 +20,7 @@ export function convertFromTextToHz(schema, data) {
   return result;
 }
 
-export function convertFromHzToTextRobust(
-  schema,
-  frequencyArray,
-  options = {}
-) {
+export function convertFromHzToText(schema, frequencyArray, options = {}) {
   const tolerance = options.tolerance || CONFIG.FREQUENCY_TOLERANCE_PERCENT;
 
   // First, map detected frequencies to closest valid frequencies

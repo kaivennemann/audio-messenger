@@ -8,3 +8,14 @@ export const CONFIG = {
   // Gap between tones in milliseconds
   TONE_GAP_MS: 50,
 };
+
+export const SINGLE_CONFIG = {
+  // Standard tolerance
+  FREQUENCY_TOLERANCE_PERCENT: 0.08,
+  // Standard amplitude threshold
+  MIN_AMPLITUDE_THRESHOLD: 30,
+  // Shorter duration since we have fewer tones
+  TONE_DURATION_MS: 120,
+  // Minimal gap for speed
+  TONE_GAP_MS: 30,
+};

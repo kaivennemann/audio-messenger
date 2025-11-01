@@ -1,5 +1,5 @@
-import { findClosestValidFrequency } from './basic';
-import { CONFIG } from './config';
+import { findClosestValidFrequency } from './basic.js';
+import { CONFIG } from './config.js';
 
 /**
  * Process raw frequency detections into discrete tones

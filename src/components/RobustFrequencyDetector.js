@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   findClosestValidFrequency,
   processFrequencyDetections,
-  convertFromHzToTextRobust,
   CONFIG,
-} from '../conversion/parser/robust';
+} from '../conversion/parser/robust.js';
+import { convertFromHzToText } from '../conversion/parser/basic.js';
 
 export default function RobustFrequencyDetector({ onMessageReceived }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -66,7 +66,7 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
     // Process all detections
     if (detectionsRef.current.length > 0) {
       const frequencies = processFrequencyDetections(detectionsRef.current);
-      const message = convertFromHzToTextRobust(frequencies);
+      const message = convertFromHzToText(frequencies);
 
       if (message) {
         setDetectedMessage(message);
@@ -134,8 +134,11 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
       setPeakAmp(maxAmplitude);
 
       // Update detection buffer for visualization (keep last 20)
-      if (closestValid !== null && maxAmplitude >= CONFIG.MIN_AMPLITUDE_THRESHOLD) {
-        setDetectionBuffer((prev) => {
+      if (
+        closestValid !== null &&
+        maxAmplitude >= CONFIG.MIN_AMPLITUDE_THRESHOLD
+      ) {
+        setDetectionBuffer(prev => {
           const newBuffer = [...prev, closestValid];
           return newBuffer.slice(-20);
         });
@@ -426,16 +429,22 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
         <div className="detection-info">
           <div className="info-card primary">
             <div className="info-label">Detected Frequency</div>
-            <div className="info-value small">{peakFreq ? `${peakFreq} Hz` : '---'}</div>
+            <div className="info-value small">
+              {peakFreq ? `${peakFreq} Hz` : '---'}
+            </div>
           </div>
 
           <div className="info-card success">
             <div className="info-label">Matched Valid Freq</div>
-            <div className="info-value small">{validFreq ? `${validFreq} Hz` : 'None'}</div>
+            <div className="info-value small">
+              {validFreq ? `${validFreq} Hz` : 'None'}
+            </div>
           </div>
 
           <div className="info-card" style={{ gridColumn: '1 / -1' }}>
-            <div className="info-label">Amplitude (min: {CONFIG.MIN_AMPLITUDE_THRESHOLD})</div>
+            <div className="info-label">
+              Amplitude (min: {CONFIG.MIN_AMPLITUDE_THRESHOLD})
+            </div>
             <div className="info-value small">{peakAmp} / 255</div>
             <div className="amplitude-bar">
               <div
@@ -463,13 +472,22 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
       <div className="message-display">
         <div className="message-label">Decoded Message:</div>
         <div className="message-content">
-          {detectedMessage || (isRecording ? 'Listening...' : 'Click microphone to start receiving')}
+          {detectedMessage ||
+            (isRecording
+              ? 'Listening...'
+              : 'Click microphone to start receiving')}
         </div>
       </div>
 
       <div className="status-indicator">
         <div className={`status-dot ${isRecording ? 'active' : ''}`}></div>
-        <span>{isRecording ? 'Recording in progress' : detectedMessage ? 'Decoding complete' : 'Ready to receive'}</span>
+        <span>
+          {isRecording
+            ? 'Recording in progress'
+            : detectedMessage
+              ? 'Decoding complete'
+              : 'Ready to receive'}
+        </span>
       </div>
     </div>
   );
