@@ -60,3 +60,20 @@ export function singleConstructor(alphabet) {
     spacingMode: 'single',
   });
 }
+
+/**
+ * Quad-Tone Schema Generator
+ * Uses FOUR tones per character for maximum information density
+ * Requires fewer bands but more tones = better frequency resolution
+ */
+export function quadConstructor(alphabet) {
+  return new SchemaGenerator({
+    alphabet,
+    filePath: '../schema/quad.json',
+    minHz: 1000,
+    maxHz: 5000,
+    bands: 20,  // Fewer bands needed with 4 tones
+    spacingMode: 'logarithmic',
+    tonesPerSymbol: 4,  // Explicitly set 4 tones per symbol
+  });
+}

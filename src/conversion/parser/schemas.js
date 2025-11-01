@@ -3,12 +3,14 @@ import basicSchema from '../schema/basic.json';
 import voiceSchema from '../schema/voice.json';
 import ultrasonicSchema from '../schema/ultrasonic.json';
 import singleSchema from '../schema/single.json';
+import quadSchema from '../schema/quad.json';
 
 const schemas = {
   basic: basicSchema,
   voice: voiceSchema,
   ultrasonic: ultrasonicSchema,
   single: singleSchema,
+  quad: quadSchema,
 };
 
 export function getSchema(schemaType) {

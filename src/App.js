@@ -98,16 +98,22 @@ function App() {
           ⚡ Single-Tone (2-6kHz) - FASTEST
         </button>
         <button
+          className={`mode-button ${schemaMode === 'quad' ? 'active' : ''}`}
+          onClick={() => setSchemaMode('quad')}
+        >
+          🎯 Quad-Tone (1-5kHz) - MAX DENSITY
+        </button>
+        <button
           className={`mode-button ${schemaMode === 'ultrasonic' ? 'active' : ''}`}
           onClick={() => setSchemaMode('ultrasonic')}
         >
-          🚀 Ultrasonic (8-17kHz) - No Voice Interference
+          🚀 Ultrasonic (8-17kHz)
         </button>
         <button
           className={`mode-button ${schemaMode === 'voice' ? 'active' : ''}`}
           onClick={() => setSchemaMode('voice')}
         >
-          🎤 Voice Range (300-3500Hz)
+          🎤 Voice (300-3500Hz)
         </button>
         <button
           className={`mode-button ${schemaMode === 'basic' ? 'active' : ''}`}
@@ -124,6 +130,7 @@ function App() {
             {schemaMode === 'single' && (
               <VoiceTransmitter schemaType="single" />
             )}
+            {schemaMode === 'quad' && <VoiceTransmitter schemaType="quad" />}
             {schemaMode === 'ultrasonic' && (
               <VoiceTransmitter schemaType="ultrasonic" />
             )}
@@ -133,6 +140,7 @@ function App() {
           <div>
             <h3 className="section-header">Receive</h3>
             {schemaMode === 'single' && <VoiceReceiver schemaType="single" />}
+            {schemaMode === 'quad' && <VoiceReceiver schemaType="quad" />}
             {schemaMode === 'ultrasonic' && (
               <VoiceReceiver schemaType="ultrasonic" />
             )}

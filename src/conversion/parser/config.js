@@ -66,4 +66,18 @@ export const SCHEMA_CONFIGS = {
     minFreq: 1900,
     maxFreq: 6100,
   },
+  quad: {
+    name: 'Quad-Tone',
+    schemaPath: '../schema/quad.json',
+    icon: '🎯',
+    range: '1000-5000 Hz',
+    description: '4 tones per char - max density',
+    FREQUENCY_TOLERANCE_PERCENT: 0.08,
+    MIN_AMPLITUDE_THRESHOLD: 30,
+    TONE_DURATION_MS: 250,
+    TONE_GAP_MS: 50,
+    fftSize: 16384,  // Higher FFT for better low-frequency resolution
+    minFreq: 900,
+    maxFreq: 5100,
+  },
 };
