@@ -47,15 +47,33 @@ export class SchemaGenerator {
     // Generate valid frequencies based on spacing mode
     if (spacingMode === 'single') {
       // Single-tone mode: one frequency per symbol
-      this.valid_hz = this.generateFrequencies(minHz, maxHz, symbolCount, 'linear');
+      this.valid_hz = this.generateFrequencies(
+        minHz,
+        maxHz,
+        symbolCount,
+        'linear'
+      );
       this.tonesPerSymbol = 1;
     } else if (spacingMode === 'logarithmic') {
-      this.valid_hz = this.generateFrequencies(minHz, maxHz, bands, 'logarithmic');
-      this.tonesPerSymbol = tonesPerSymbol || Math.ceil(Math.log(symbolCount) / Math.log(bands));
+      this.valid_hz = this.generateFrequencies(
+        minHz,
+        maxHz,
+        bands,
+        'logarithmic'
+      );
+      this.tonesPerSymbol =
+        tonesPerSymbol || Math.ceil(Math.log(symbolCount) / Math.log(bands));
+    } else if (spacingMode === 'random' && tonesPerSymbol) {
+      this.frequencyMap = this.alphabet.reduce((map, symbol, index) => {
+        map[symbol] = this.generateRandFrequencies(minHz, maxHz, bands);
+        return map;
+      }, {});
+      return;
     } else {
       // Linear spacing (default)
       this.valid_hz = this.generateFrequencies(minHz, maxHz, bands, 'linear');
-      this.tonesPerSymbol = tonesPerSymbol || Math.ceil(Math.log(symbolCount) / Math.log(bands));
+      this.tonesPerSymbol =
+        tonesPerSymbol || Math.ceil(Math.log(symbolCount) / Math.log(bands));
     }
 
     // Create frequency map
@@ -88,6 +106,15 @@ export class SchemaGenerator {
       }
     }
 
+    return frequencies;
+  }
+
+  generateRandFrequencies(minHz, maxHz, count) {
+    const frequencies = [];
+    for (let i = 0; i < count; i++) {
+      const freq = Math.round(Math.random() * (maxHz - minHz) + minHz);
+      frequencies.push(freq);
+    }
     return frequencies;
   }
 
