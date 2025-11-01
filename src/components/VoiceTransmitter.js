@@ -53,21 +53,6 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
       };
 
       switch (playbackMode) {
-        case 'repeat':
-          await playerRef.current.playWithRepetition(
-            frequencies,
-            2,
-            onProgress,
-            onComplete
-          );
-          break;
-        case 'crc':
-          await playerRef.current.playWithChecksum(
-            frequencies,
-            onProgress,
-            onComplete
-          );
-          break;
         default:
           await playerRef.current.playSequence(
             frequencies,
@@ -348,7 +333,7 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
       </div>
 
       <div className="controls-section">
-        <div className="control-group">
+        {/* <div className="control-group">
           <label className="control-label">Transmission Mode</label>
           <div className="mode-selector">
             <button
@@ -366,7 +351,7 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
               🔁 Repeat (2x)
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div className="control-group">
           <label className="control-label">Timing (ms)</label>

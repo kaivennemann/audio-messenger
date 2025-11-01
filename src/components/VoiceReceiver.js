@@ -549,29 +549,6 @@ export default function VoiceReceiver({
         </div>
       )}
 
-      {!isRecording && (
-        <div className="decoding-mode-selector">
-          <button
-            className={`mode-option ${decodingMode === 'auto' ? 'active' : ''}`}
-            onClick={() => setDecodingMode('auto')}
-          >
-            🔄 Auto
-          </button>
-          <button
-            className={`mode-option ${decodingMode === 'ecc' ? 'active' : ''}`}
-            onClick={() => setDecodingMode('ecc')}
-          >
-            🛡️ ECC Only
-          </button>
-          <button
-            className={`mode-option ${decodingMode === 'basic' ? 'active' : ''}`}
-            onClick={() => setDecodingMode('basic')}
-          >
-            📡 Basic
-          </button>
-        </div>
-      )}
-
       {detectedMessage && (
         <div className="message-display">
           <div className="message-label">📨 Decoded Message</div>

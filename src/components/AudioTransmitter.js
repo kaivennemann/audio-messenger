@@ -46,27 +46,7 @@ export default function AudioTransmitter() {
         setProgress(0);
       };
 
-      // Play based on selected mode
-      if (playbackMode === 'basic') {
-        await playerRef.current.playSequence(
-          frequencies,
-          onProgress,
-          onComplete
-        );
-      } else if (playbackMode === 'repeat') {
-        await playerRef.current.playWithRepetition(
-          frequencies,
-          2,
-          onProgress,
-          onComplete
-        );
-      } else if (playbackMode === 'checksum') {
-        await playerRef.current.playWithChecksum(
-          frequencies,
-          onProgress,
-          onComplete
-        );
-      }
+      await playerRef.current.playSequence(frequencies, onProgress, onComplete);
     } catch (error) {
       console.error('Error playing message:', error);
       alert('Error: ' + error.message);
