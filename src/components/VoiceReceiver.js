@@ -1,51 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  findClosestVoiceFrequency,
-  processVoiceDetections,
-  convertVoiceHzToText,
-  VOICE_CONFIG,
-  voiceSchema,
-} from '../conversion/parser/voice.js';
-import {
-  findClosestUltrasonicFrequency,
-  processUltrasonicDetections,
-  convertUltrasonicHzToText,
-  ULTRASONIC_CONFIG,
-  ultrasonicSchema,
-} from '../conversion/parser/ultrasonic.js';
-import {
-  findClosestSingleFrequency,
-  processSingleDetections,
-  convertSingleHzToText,
-  SINGLE_CONFIG,
-  singleSchema,
-} from '../conversion/parser/single.js';
+  findClosestValidFrequency,
+  convertFromHzToText,
+  processFrequencyDetections,
+} from '../conversion/parser/basic.js';
+import { getSchema, getConfig } from '../conversion/parser/schemas.js';
 
-export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' }) {
-  const isSingle = schemaType === 'single';
-  const isUltrasonic = schemaType === 'ultrasonic';
-
-  let config, findClosestFrequency, processDetections, convertHzToText, validHz;
-
-  if (isSingle) {
-    config = SINGLE_CONFIG;
-    findClosestFrequency = findClosestSingleFrequency;
-    processDetections = processSingleDetections;
-    convertHzToText = convertSingleHzToText;
-    validHz = singleSchema.valid_hz;
-  } else if (isUltrasonic) {
-    config = ULTRASONIC_CONFIG;
-    findClosestFrequency = findClosestUltrasonicFrequency;
-    processDetections = processUltrasonicDetections;
-    convertHzToText = convertUltrasonicHzToText;
-    validHz = ultrasonicSchema.valid_hz;
-  } else {
-    config = VOICE_CONFIG;
-    findClosestFrequency = findClosestVoiceFrequency;
-    processDetections = processVoiceDetections;
-    convertHzToText = convertVoiceHzToText;
-    validHz = voiceSchema.valid_hz;
-  }
+export default function VoiceReceiver({
+  onMessageReceived,
+  schemaType = 'voice',
+}) {
+  const schema = getSchema(schemaType);
+  const config = getConfig(schemaType);
 
   const [isRecording, setIsRecording] = useState(false);
   const [peakFreq, setPeakFreq] = useState(null);
@@ -71,30 +37,25 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
       const source = audioContextRef.current.createMediaStreamSource(stream);
       const analyser = audioContextRef.current.createAnalyser();
 
-      // Very high FFT size for better low-frequency resolution
-      analyser.fftSize = 16384;
-      analyser.smoothingTimeConstant = 0.4;
-      source.connect(analyser);
+      analyser.fftSize = config.fftSize;
+      analyser.smoothingTimeConstant = 0.3;
 
+      source.connect(analyser);
       sourceRef.current = source;
       analyserRef.current = analyser;
-      startTimeRef.current = Date.now();
+
       detectionsRef.current = [];
+      startTimeRef.current = Date.now();
+      setDetectionBuffer([]);
+      setDetectedMessage('');
+      setEccStatus(null);
 
       setIsRecording(true);
-      setDetectedMessage('');
-      setDetectionBuffer([]);
       detectPeakFrequency();
-    } catch (err) {
-      console.error('Error accessing microphone:', err);
-      alert('Could not access microphone');
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      alert('Could not access microphone. Please grant permission.');
     }
-  };
-
-  const clearMessage = () => {
-    setDetectedMessage('');
-    setDetectionBuffer([]);
-    detectionsRef.current = [];
   };
 
   const stopRecording = async () => {
@@ -107,7 +68,11 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
 
     // Process all detections
     if (detectionsRef.current.length > 0) {
-      let frequencies = processDetections(detectionsRef.current);
+      let frequencies = processFrequencyDetections(
+        schema,
+        config,
+        detectionsRef.current
+      );
       let message = '';
       let status = null;
 
@@ -120,11 +85,15 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
           const deinterleaved = ec.deinterleave(frequencies, 4);
 
           // Try removing error correction
-          const result = ec.removeErrorCorrection(deinterleaved, validHz, {
-            repetitions: 3,
-            addCRC: true,
-            addParity: false,
-          });
+          const result = ec.removeErrorCorrection(
+            deinterleaved,
+            schema.valid_hz,
+            {
+              repetitions: 3,
+              addCRC: true,
+              addParity: false,
+            }
+          );
 
           if (result.valid) {
             frequencies = result.data;
@@ -147,7 +116,7 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
         }
       }
 
-      message = convertHzToText(frequencies);
+      message = convertFromHzToText(schema, frequencies);
 
       if (message) {
         setDetectedMessage(message);
@@ -188,20 +157,9 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
       const sampleRate = audioContextRef.current.sampleRate;
       const binWidth = sampleRate / analyser.fftSize;
 
-      // Focus on appropriate frequency range
-      let minFreq, maxFreq;
-      if (isSingle) {
-        minFreq = 1900;
-        maxFreq = 6100;
-      } else if (isUltrasonic) {
-        minFreq = 7500;
-        maxFreq = 17500;
-      } else {
-        minFreq = 250;
-        maxFreq = 3600;
-      }
-      const minBin = Math.floor(minFreq / binWidth);
-      const maxBin = Math.ceil(maxFreq / binWidth);
+      // Use config values for frequency range
+      const minBin = Math.floor(config.minFreq / binWidth);
+      const maxBin = Math.ceil(config.maxFreq / binWidth);
 
       let maxAmplitude = 0;
       let peakBin = minBin;
@@ -224,7 +182,11 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
       });
 
       // Find closest valid frequency
-      const closestValid = findClosestFrequency(frequency);
+      const closestValid = findClosestValidFrequency(
+        schema,
+        frequency,
+        config.FREQUENCY_TOLERANCE_PERCENT
+      );
 
       // Update UI
       setPeakFreq(frequency.toFixed(2));
@@ -232,8 +194,11 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
       setPeakAmp(maxAmplitude);
 
       // Update detection buffer for visualization
-      if (closestValid !== null && maxAmplitude >= config.MIN_AMPLITUDE_THRESHOLD) {
-        setDetectionBuffer((prev) => {
+      if (
+        closestValid !== null &&
+        maxAmplitude >= config.MIN_AMPLITUDE_THRESHOLD
+      ) {
+        setDetectionBuffer(prev => {
           const newBuffer = [...prev, closestValid];
           return newBuffer.slice(-20);
         });
@@ -256,21 +221,10 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
     };
   }, []);
 
-  let schemaLabel, schemaRange, schemaIcon;
-
-  if (isSingle) {
-    schemaLabel = 'Single-Tone';
-    schemaRange = '2000-6000 Hz';
-    schemaIcon = '⚡';
-  } else if (isUltrasonic) {
-    schemaLabel = 'Ultrasonic';
-    schemaRange = '8000-17000 Hz';
-    schemaIcon = '🚀';
-  } else {
-    schemaLabel = 'Voice-Optimized';
-    schemaRange = '300-3500 Hz';
-    schemaIcon = '🎤';
-  }
+  const clearMessage = () => {
+    setDetectedMessage('');
+    setEccStatus(null);
+  };
 
   return (
     <div className="voice-receiver">
@@ -365,53 +319,55 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
 
         .detection-info {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(2, 1fr);
           gap: 15px;
           margin-bottom: 20px;
         }
 
         .info-card {
-          background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%);
-          border-radius: 12px;
+          background: #f9fafb;
           padding: 15px;
+          border-radius: 12px;
         }
 
         .info-card.primary {
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
         }
 
         .info-card.success {
-          background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
         }
 
         .info-label {
-          font-size: 0.85em;
-          color: #555;
+          font-size: 0.75em;
+          color: #666;
+          text-transform: uppercase;
+          font-weight: 600;
           margin-bottom: 5px;
         }
 
         .info-value {
           font-size: 1.5em;
-          font-weight: bold;
+          font-weight: 700;
           color: #333;
         }
 
         .info-value.small {
-          font-size: 1.2em;
+          font-size: 1.1em;
         }
 
         .buffer-display {
-          background: #f8f9fa;
-          border-radius: 10px;
+          background: #f9fafb;
           padding: 15px;
-          margin-bottom: 15px;
-          min-height: 60px;
+          border-radius: 12px;
+          margin-bottom: 20px;
         }
 
         .buffer-label {
           font-size: 0.85em;
           color: #666;
-          margin-bottom: 8px;
+          font-weight: 600;
+          margin-bottom: 10px;
         }
 
         .buffer-content {
@@ -420,89 +376,102 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
           gap: 5px;
         }
 
-        .freq-badge {
-          background: #10b981;
+        .buffer-item {
+          background: #667eea;
           color: white;
           padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 0.8em;
-          font-family: monospace;
+          border-radius: 6px;
+          font-size: 0.75em;
+          font-weight: 600;
         }
 
         .message-display {
           background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-          border-radius: 12px;
           padding: 20px;
-          margin-top: 20px;
-          min-height: 80px;
+          border-radius: 12px;
+          margin-bottom: 20px;
+          border: 2px solid #fbbf24;
         }
 
         .message-label {
-          font-size: 0.9em;
-          color: #555;
-          margin-bottom: 10px;
+          font-size: 0.85em;
+          color: #92400e;
           font-weight: 600;
+          margin-bottom: 10px;
+          text-transform: uppercase;
         }
 
-        .message-content {
+        .message-text {
           font-size: 1.3em;
-          color: #333;
-          font-weight: bold;
+          font-weight: 700;
+          color: #1f2937;
           word-wrap: break-word;
           font-family: monospace;
+          background: white;
+          padding: 15px;
+          border-radius: 8px;
+        }
+
+        .decoding-mode-selector {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+
+        .mode-option {
+          padding: 10px;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          background: white;
+          cursor: pointer;
+          font-size: 0.85em;
+          font-weight: 600;
+          text-align: center;
+          transition: all 0.3s;
+        }
+
+        .mode-option:hover {
+          border-color: #667eea;
+        }
+
+        .mode-option.active {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-color: transparent;
         }
 
         .ecc-status {
-          margin-top: 12px;
           display: flex;
-          justify-content: center;
+          gap: 10px;
+          align-items: center;
+          padding: 12px;
+          background: white;
+          border-radius: 8px;
+          margin-top: 10px;
         }
 
-        .ecc-badge {
-          display: inline-block;
-          padding: 6px 12px;
+        .status-badge {
+          padding: 4px 10px;
           border-radius: 6px;
-          font-size: 0.8em;
+          font-size: 0.75em;
           font-weight: 600;
+          text-transform: uppercase;
         }
 
-        .ecc-badge.ecc-valid {
+        .status-badge.valid {
           background: #d1fae5;
           color: #065f46;
-          border: 1px solid #10b981;
         }
 
-        .ecc-badge.ecc-invalid {
+        .status-badge.invalid {
           background: #fee2e2;
           color: #991b1b;
-          border: 1px solid #ef4444;
         }
 
-        .status-indicator {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          margin-top: 15px;
-          font-size: 0.9em;
-          color: #666;
-        }
-
-        .status-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: #ccc;
-        }
-
-        .status-dot.active {
-          background: #10b981;
-          animation: blink 1.5s infinite;
-        }
-
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
+        .status-badge.corrected {
+          background: #fef3c7;
+          color: #92400e;
         }
 
         .amplitude-bar {
@@ -522,11 +491,13 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
       `}</style>
 
       <div className="receiver-header">
-        <h2>{schemaLabel} Receiver</h2>
+        <h2>{config.name} Receiver</h2>
         <p className="subtitle">
-          {schemaRange} • {isSingle ? '2x faster - 1 tone per char' : isUltrasonic ? 'No voice interference' : 'Speech-optimized'}
+          {config.range} • {config.description}
         </p>
-        <span className="badge">{schemaIcon} {schemaLabel}</span>
+        <span className="badge">
+          {config.icon} {config.name}
+        </span>
       </div>
 
       <div className="button-container">
@@ -578,16 +549,22 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
         <div className="detection-info">
           <div className="info-card primary">
             <div className="info-label">Detected Frequency</div>
-            <div className="info-value small">{peakFreq ? `${peakFreq} Hz` : '---'}</div>
+            <div className="info-value small">
+              {peakFreq ? `${peakFreq} Hz` : '---'}
+            </div>
           </div>
 
           <div className="info-card success">
-            <div className="info-label">Matched Voice Freq</div>
-            <div className="info-value small">{validFreq ? `${validFreq} Hz` : 'None'}</div>
+            <div className="info-label">Matched Freq</div>
+            <div className="info-value small">
+              {validFreq ? `${validFreq} Hz` : 'None'}
+            </div>
           </div>
 
           <div className="info-card" style={{ gridColumn: '1 / -1' }}>
-            <div className="info-label">Amplitude (min: {config.MIN_AMPLITUDE_THRESHOLD})</div>
+            <div className="info-label">
+              Amplitude (min: {config.MIN_AMPLITUDE_THRESHOLD})
+            </div>
             <div className="info-value small">{peakAmp} / 255</div>
             <div className="amplitude-bar">
               <div
@@ -604,95 +581,62 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
           <div className="buffer-label">Recent Valid Detections (last 20)</div>
           <div className="buffer-content">
             {detectionBuffer.map((freq, idx) => (
-              <span key={idx} className="freq-badge">
-                {freq}
+              <span key={idx} className="buffer-item">
+                {freq} Hz
               </span>
             ))}
           </div>
         </div>
       )}
 
-      <div className="message-display">
-        <div className="message-label">Decoded Message:</div>
-        <div className="message-content">
-          {detectedMessage || (isRecording ? `Listening for ${schemaType} frequencies...` : 'Click microphone to start receiving')}
-        </div>
-        {eccStatus && (
-          <div className="ecc-status">
-            {eccStatus.mode === 'ECC' && eccStatus.valid && (
-              <span className="ecc-badge ecc-valid">
-                ✅ ECC: {eccStatus.corrected ? 'Errors corrected' : 'No errors'}
-              </span>
-            )}
-            {eccStatus.mode === 'Basic' && eccStatus.valid === false && (
-              <span className="ecc-badge ecc-invalid">
-                ⚠️ CRC failed - using basic decoding
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="mode-selector-container" style={{ marginTop: '15px', marginBottom: '15px' }}>
-        <div className="mode-label" style={{ fontSize: '0.85em', color: '#666', marginBottom: '8px' }}>
-          Decoding Mode:
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+      {!isRecording && (
+        <div className="decoding-mode-selector">
           <button
-            className={`mode-btn ${decodingMode === 'auto' ? 'active' : ''}`}
+            className={`mode-option ${decodingMode === 'auto' ? 'active' : ''}`}
             onClick={() => setDecodingMode('auto')}
-            disabled={isRecording}
-            style={{
-              flex: 1,
-              padding: '8px',
-              border: decodingMode === 'auto' ? '2px solid #10b981' : '2px solid #e0e0e0',
-              borderRadius: '6px',
-              background: decodingMode === 'auto' ? '#d1fae5' : 'white',
-              cursor: isRecording ? 'not-allowed' : 'pointer',
-              fontSize: '0.85em',
-            }}
           >
             🔄 Auto
           </button>
           <button
-            className={`mode-btn ${decodingMode === 'ecc' ? 'active' : ''}`}
+            className={`mode-option ${decodingMode === 'ecc' ? 'active' : ''}`}
             onClick={() => setDecodingMode('ecc')}
-            disabled={isRecording}
-            style={{
-              flex: 1,
-              padding: '8px',
-              border: decodingMode === 'ecc' ? '2px solid #10b981' : '2px solid #e0e0e0',
-              borderRadius: '6px',
-              background: decodingMode === 'ecc' ? '#d1fae5' : 'white',
-              cursor: isRecording ? 'not-allowed' : 'pointer',
-              fontSize: '0.85em',
-            }}
           >
             🛡️ ECC Only
           </button>
           <button
-            className={`mode-btn ${decodingMode === 'basic' ? 'active' : ''}`}
+            className={`mode-option ${decodingMode === 'basic' ? 'active' : ''}`}
             onClick={() => setDecodingMode('basic')}
-            disabled={isRecording}
-            style={{
-              flex: 1,
-              padding: '8px',
-              border: decodingMode === 'basic' ? '2px solid #10b981' : '2px solid #e0e0e0',
-              borderRadius: '6px',
-              background: decodingMode === 'basic' ? '#d1fae5' : 'white',
-              cursor: isRecording ? 'not-allowed' : 'pointer',
-              fontSize: '0.85em',
-            }}
           >
-            ⚡ Basic
+            📡 Basic
           </button>
         </div>
-      </div>
+      )}
 
-      <div className="status-indicator">
-        <div className={`status-dot ${isRecording ? 'active' : ''}`}></div>
-        <span>{isRecording ? 'Recording in progress' : detectedMessage ? 'Decoding complete' : 'Ready to receive'}</span>
-      </div>
+      {detectedMessage && (
+        <div className="message-display">
+          <div className="message-label">📨 Decoded Message</div>
+          <div className="message-text">{detectedMessage}</div>
+
+          {eccStatus && (
+            <div className="ecc-status">
+              <span
+                className={`status-badge ${eccStatus.valid ? 'valid' : 'invalid'}`}
+              >
+                {eccStatus.mode}
+              </span>
+              {eccStatus.valid && (
+                <span className="status-badge valid">✓ CRC Valid</span>
+              )}
+              {!eccStatus.valid && eccStatus.mode === 'ECC' && (
+                <span className="status-badge invalid">✗ CRC Failed</span>
+              )}
+              {eccStatus.corrected && (
+                <span className="status-badge corrected">Errors Corrected</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

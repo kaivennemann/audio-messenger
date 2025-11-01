@@ -98,3 +98,50 @@ function arraysMatch(arr1, arr2) {
     arr1.length === arr2.length && arr1.every((val, idx) => val === arr2[idx])
   );
 }
+
+export function processFrequencyDetections(schema, config, detections) {
+  const MIN_TONE_DURATION = config.TONE_DURATION_MS * 0.5;
+  const validDetections = [];
+
+  let currentTone = null;
+  let toneStartTime = 0;
+
+  for (let detection of detections) {
+    const closestFreq = findClosestValidFrequency(
+      schema,
+      detection.frequency,
+      config.FREQUENCY_TOLERANCE_PERCENT
+    );
+
+    if (
+      closestFreq &&
+      detection.amplitude >= config.MIN_AMPLITUDE_THRESHOLD
+    ) {
+      if (currentTone === closestFreq) {
+        // Continue current tone
+        continue;
+      } else {
+        // New tone detected
+        if (currentTone !== null) {
+          const duration = detection.timestamp - toneStartTime;
+          if (duration >= MIN_TONE_DURATION) {
+            validDetections.push(currentTone);
+          }
+        }
+        currentTone = closestFreq;
+        toneStartTime = detection.timestamp;
+      }
+    }
+  }
+
+  // Add last tone if valid
+  if (currentTone !== null && detections.length > 0) {
+    const lastTimestamp = detections[detections.length - 1].timestamp;
+    const duration = lastTimestamp - toneStartTime;
+    if (duration >= MIN_TONE_DURATION) {
+      validDetections.push(currentTone);
+    }
+  }
+
+  return validDetections;
+}

@@ -9,13 +9,61 @@ export const CONFIG = {
   TONE_GAP_MS: 50,
 };
 
-export const SINGLE_CONFIG = {
-  // Standard tolerance
-  FREQUENCY_TOLERANCE_PERCENT: 0.08,
-  // Standard amplitude threshold
-  MIN_AMPLITUDE_THRESHOLD: 30,
-  // Shorter duration since we have fewer tones
-  TONE_DURATION_MS: 120,
-  // Minimal gap for speed
-  TONE_GAP_MS: 30,
+export const SCHEMA_CONFIGS = {
+  basic: {
+    name: 'Basic',
+    schemaPath: '../schema/basic.json',
+    icon: '📻',
+    range: '400-8000 Hz',
+    description: 'Original dual-tone mode',
+    FREQUENCY_TOLERANCE_PERCENT: 0.08,
+    MIN_AMPLITUDE_THRESHOLD: 30,
+    TONE_DURATION_MS: 200,
+    TONE_GAP_MS: 50,
+    fftSize: 8192,
+    minFreq: 250,
+    maxFreq: 8500,
+  },
+  voice: {
+    name: 'Voice-Optimized',
+    schemaPath: '../schema/voice.json',
+    icon: '🎤',
+    range: '300-3500 Hz',
+    description: 'Speech-optimized',
+    FREQUENCY_TOLERANCE_PERCENT: 0.08,
+    MIN_AMPLITUDE_THRESHOLD: 30,
+    TONE_DURATION_MS: 200,
+    TONE_GAP_MS: 50,
+    fftSize: 16384,
+    minFreq: 250,
+    maxFreq: 3600,
+  },
+  ultrasonic: {
+    name: 'Ultrasonic',
+    schemaPath: '../schema/ultrasonic.json',
+    icon: '🚀',
+    range: '8000-17000 Hz',
+    description: 'No voice interference',
+    FREQUENCY_TOLERANCE_PERCENT: 0.08,
+    MIN_AMPLITUDE_THRESHOLD: 30,
+    TONE_DURATION_MS: 200,
+    TONE_GAP_MS: 50,
+    fftSize: 8192,
+    minFreq: 7500,
+    maxFreq: 17500,
+  },
+  single: {
+    name: 'Single-Tone',
+    schemaPath: '../schema/single.json',
+    icon: '⚡',
+    range: '2000-6000 Hz',
+    description: '2x faster - 1 tone per char',
+    FREQUENCY_TOLERANCE_PERCENT: 0.08,
+    MIN_AMPLITUDE_THRESHOLD: 30,
+    TONE_DURATION_MS: 120,
+    TONE_GAP_MS: 30,
+    fftSize: 8192,
+    minFreq: 1900,
+    maxFreq: 6100,
+  },
 };

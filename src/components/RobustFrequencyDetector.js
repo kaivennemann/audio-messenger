@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   findClosestValidFrequency,
   processFrequencyDetections,
-  CONFIG,
-} from '../conversion/parser/robust.js';
-import { convertFromHzToText } from '../conversion/parser/basic.js';
+  convertFromHzToText,
+} from '../conversion/parser/basic.js';
+import { getSchema, getConfig } from '../conversion/parser/schemas.js';
 
 export default function RobustFrequencyDetector({ onMessageReceived }) {
+  const schema = getSchema('basic');
+  const config = getConfig('basic');
+
   const [isRecording, setIsRecording] = useState(false);
   const [peakFreq, setPeakFreq] = useState(null);
   const [validFreq, setValidFreq] = useState(null);
@@ -65,8 +68,12 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
 
     // Process all detections
     if (detectionsRef.current.length > 0) {
-      const frequencies = processFrequencyDetections(detectionsRef.current);
-      const message = convertFromHzToText(frequencies);
+      const frequencies = processFrequencyDetections(
+        schema,
+        config,
+        detectionsRef.current
+      );
+      const message = convertFromHzToText(schema, frequencies);
 
       if (message) {
         setDetectedMessage(message);
@@ -126,7 +133,11 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
       });
 
       // Find closest valid frequency
-      const closestValid = findClosestValidFrequency(frequency);
+      const closestValid = findClosestValidFrequency(
+        schema,
+        frequency,
+        config.FREQUENCY_TOLERANCE_PERCENT
+      );
 
       // Update UI
       setPeakFreq(frequency.toFixed(2));
@@ -136,7 +147,7 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
       // Update detection buffer for visualization (keep last 20)
       if (
         closestValid !== null &&
-        maxAmplitude >= CONFIG.MIN_AMPLITUDE_THRESHOLD
+        maxAmplitude >= config.MIN_AMPLITUDE_THRESHOLD
       ) {
         setDetectionBuffer(prev => {
           const newBuffer = [...prev, closestValid];
@@ -443,7 +454,7 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
 
           <div className="info-card" style={{ gridColumn: '1 / -1' }}>
             <div className="info-label">
-              Amplitude (min: {CONFIG.MIN_AMPLITUDE_THRESHOLD})
+              Amplitude (min: {config.MIN_AMPLITUDE_THRESHOLD})
             </div>
             <div className="info-value small">{peakAmp} / 255</div>
             <div className="amplitude-bar">

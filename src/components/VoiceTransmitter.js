@@ -1,28 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { convertTextToVoiceHz, VOICE_CONFIG, voiceSchema } from '../conversion/parser/voice.js';
-import { convertTextToUltrasonicHz, ULTRASONIC_CONFIG, ultrasonicSchema } from '../conversion/parser/ultrasonic.js';
-import { convertTextToSingleHz, SINGLE_CONFIG, singleSchema } from '../conversion/parser/single.js';
+import { convertFromTextToHz } from '../conversion/parser/basic.js';
+import { getSchema, getConfig } from '../conversion/parser/schemas.js';
 import { EnhancedAudioPlayer } from '../conversion/player.js';
 
 export default function VoiceTransmitter({ schemaType = 'voice' }) {
-  const isSingle = schemaType === 'single';
-  const isUltrasonic = schemaType === 'ultrasonic';
-
-  let config, convertFunction, validHz;
-
-  if (isSingle) {
-    config = SINGLE_CONFIG;
-    convertFunction = convertTextToSingleHz;
-    validHz = singleSchema.valid_hz;
-  } else if (isUltrasonic) {
-    config = ULTRASONIC_CONFIG;
-    convertFunction = convertTextToUltrasonicHz;
-    validHz = ultrasonicSchema.valid_hz;
-  } else {
-    config = VOICE_CONFIG;
-    convertFunction = convertTextToVoiceHz;
-    validHz = voiceSchema.valid_hz;
-  }
+  const schema = getSchema(schemaType);
+  const config = getConfig(schemaType);
 
   const [message, setMessage] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -41,48 +24,68 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
     }
 
     try {
-      const frequencies = convertFunction(message);
+      const frequencies = convertFromTextToHz(schema, message);
       console.log(`${schemaType} frequencies to play:`, frequencies);
 
       setTotalTones(frequencies.length);
       setProgress(0);
       setIsPlaying(true);
 
-      playerRef.current = new EnhancedAudioPlayer({
-        toneDuration: toneDuration,
-        toneGap: toneGap,
-        volume: 0.3,
-        validHz: validHz,
-      });
-
-      await playerRef.current.initialize();
+      if (!playerRef.current) {
+        playerRef.current = new EnhancedAudioPlayer({
+          toneDuration,
+          toneGap,
+          volume: 0.3,
+          validHz: schema.valid_hz,
+        });
+      } else {
+        playerRef.current.toneDuration = toneDuration;
+        playerRef.current.toneGap = toneGap;
+      }
 
       const onProgress = (current, total) => {
-        setProgress(current);
+        setProgress(Math.round((current / total) * 100));
       };
 
       const onComplete = () => {
         setIsPlaying(false);
-        setProgress(0);
+        setProgress(100);
       };
 
-      if (playbackMode === 'basic') {
-        await playerRef.current.playSequence(frequencies, onProgress, onComplete);
-      } else if (playbackMode === 'repeat') {
-        await playerRef.current.playWithRepetition(frequencies, 2, onProgress, onComplete);
-      } else if (playbackMode === 'checksum') {
-        await playerRef.current.playWithChecksum(frequencies, onProgress, onComplete);
-      } else if (playbackMode === 'ecc') {
-        await playerRef.current.playWithErrorCorrection(
-          frequencies,
-          { repetitions: 3, addCRC: true, interleave: true },
-          onProgress,
-          onComplete
-        );
+      switch (playbackMode) {
+        case 'repeat':
+          await playerRef.current.playWithRepetition(
+            frequencies,
+            2,
+            onProgress,
+            onComplete
+          );
+          break;
+        case 'crc':
+          await playerRef.current.playWithChecksum(
+            frequencies,
+            onProgress,
+            onComplete
+          );
+          break;
+        case 'ecc':
+          await playerRef.current.playWithErrorCorrection(
+            frequencies,
+            { repetitions: 3, addCRC: true, interleave: true },
+            onProgress,
+            onComplete
+          );
+          break;
+        default:
+          await playerRef.current.playSequence(
+            frequencies,
+            onProgress,
+            onComplete
+          );
       }
     } catch (error) {
-      console.error('Error playing message:', error);
-      alert('Error: ' + error.message);
+      console.error('Playback error:', error);
+      alert(`Error: ${error.message}`);
       setIsPlaying(false);
     }
   };
@@ -90,44 +93,29 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
   const handleStop = () => {
     if (playerRef.current) {
       playerRef.current.stop();
-      setIsPlaying(false);
-      setProgress(0);
     }
+    setIsPlaying(false);
+    setProgress(0);
   };
 
-  const getEstimatedDuration = () => {
-    if (!message.trim()) return 0;
+  const getTransmissionInfo = () => {
+    if (!message) return 0;
     try {
-      const frequencies = convertFunction(message);
-      let toneCount = frequencies.length;
-
-      if (playbackMode === 'repeat') {
-        toneCount *= 2;
-      } else if (playbackMode === 'checksum') {
-        toneCount += 1;
+      const baseFreqs = convertFromTextToHz(schema, message);
+      switch (playbackMode) {
+        case 'repeat':
+          return baseFreqs.length * 2;
+        case 'crc':
+          return baseFreqs.length + 2;
+        case 'ecc':
+          return baseFreqs.length * 3 + 2;
+        default:
+          return baseFreqs.length;
       }
-
-      return (toneCount * (toneDuration + toneGap)) / 1000;
     } catch {
       return 0;
     }
   };
-
-  let schemaLabel, schemaRange, schemaIcon;
-
-  if (isSingle) {
-    schemaLabel = 'Single-Tone';
-    schemaRange = '2000-6000 Hz';
-    schemaIcon = '⚡';
-  } else if (isUltrasonic) {
-    schemaLabel = 'Ultrasonic';
-    schemaRange = '8000-17000 Hz';
-    schemaIcon = '🚀';
-  } else {
-    schemaLabel = 'Voice-Optimized';
-    schemaRange = '300-3500 Hz';
-    schemaIcon = '🎤';
-  }
 
   return (
     <div className="audio-transmitter">
@@ -169,128 +157,108 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
         }
 
         .input-section {
-          margin-bottom: 20px;
+          margin-bottom: 25px;
         }
 
         .message-input {
           width: 100%;
+          min-height: 100px;
           padding: 15px;
           border: 2px solid #e0e0e0;
-          border-radius: 10px;
+          border-radius: 12px;
           font-size: 1em;
           font-family: inherit;
           resize: vertical;
-          min-height: 100px;
           transition: border-color 0.3s;
         }
 
         .message-input:focus {
           outline: none;
-          border-color: #10b981;
+          border-color: #667eea;
         }
 
-        .char-count {
-          text-align: right;
-          font-size: 0.85em;
-          color: #999;
-          margin-top: 5px;
-        }
-
-        .settings-section {
-          background: #f0fdf4;
-          border-radius: 12px;
-          padding: 20px;
+        .controls-section {
           margin-bottom: 20px;
-          border: 1px solid #d1fae5;
         }
 
-        .settings-title {
-          font-size: 1em;
+        .control-group {
+          margin-bottom: 15px;
+        }
+
+        .control-label {
+          font-size: 0.9em;
           font-weight: 600;
-          color: #333;
-          margin-bottom: 15px;
+          color: #555;
+          margin-bottom: 8px;
+          display: block;
         }
 
-        .setting-row {
+        .mode-selector {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 15px;
-          margin-bottom: 15px;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
         }
 
-        .setting-item {
+        .mode-button {
+          padding: 12px;
+          border: 2px solid #e0e0e0;
+          border-radius: 10px;
+          background: white;
+          cursor: pointer;
+          font-size: 0.9em;
+          font-weight: 600;
+          transition: all 0.3s;
+        }
+
+        .mode-button:hover {
+          border-color: #667eea;
+          transform: translateY(-2px);
+        }
+
+        .mode-button.active {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-color: transparent;
+        }
+
+        .slider-group {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 15px;
+        }
+
+        .slider-item {
           display: flex;
           flex-direction: column;
         }
 
-        .setting-label {
+        .slider-item input {
+          margin-top: 5px;
+        }
+
+        .slider-value {
           font-size: 0.85em;
-          color: #666;
-          margin-bottom: 5px;
-        }
-
-        .setting-input {
-          padding: 8px 12px;
-          border: 1px solid #d1fae5;
-          border-radius: 6px;
-          font-size: 0.95em;
-        }
-
-        .mode-selector {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 15px;
-        }
-
-        .mode-button {
-          flex: 1;
-          padding: 10px;
-          border: 2px solid #e0e0e0;
-          border-radius: 8px;
-          background: white;
-          cursor: pointer;
-          transition: all 0.3s;
-          font-size: 0.9em;
-        }
-
-        .mode-button:hover {
-          border-color: #10b981;
-        }
-
-        .mode-button.active {
-          border-color: #10b981;
-          background: #10b981;
-          color: white;
+          color: #667eea;
           font-weight: 600;
         }
 
-        .control-section {
+        .action-buttons {
           display: flex;
           gap: 15px;
           margin-bottom: 20px;
         }
 
-        .control-button {
+        .play-button,
+        .stop-button {
           flex: 1;
           padding: 15px;
           border: none;
-          border-radius: 10px;
-          font-size: 1em;
+          border-radius: 12px;
+          font-size: 1.1em;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.3s;
           box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .control-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .control-button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          transform: none;
         }
 
         .play-button {
@@ -298,241 +266,214 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
           color: white;
         }
 
+        .play-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .play-button:disabled {
+          background: #d1d5db;
+          cursor: not-allowed;
+          transform: none;
+        }
+
         .stop-button {
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           color: white;
         }
 
-        .progress-section {
-          background: #f0fdf4;
-          border-radius: 12px;
-          padding: 15px;
-          margin-bottom: 15px;
+        .stop-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
         }
 
-        .progress-label {
-          font-size: 0.85em;
-          color: #666;
-          margin-bottom: 8px;
+        .progress-section {
+          margin-top: 20px;
         }
 
         .progress-bar {
-          background: #d1fae5;
+          background: #e0e0e0;
+          height: 8px;
           border-radius: 10px;
-          height: 10px;
           overflow: hidden;
-          margin-bottom: 8px;
+          margin-top: 10px;
         }
 
         .progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
           transition: width 0.3s;
           border-radius: 10px;
         }
 
-        .progress-text {
-          font-size: 0.85em;
-          color: #666;
-          text-align: center;
-        }
-
-        .info-section {
+        .info-display {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 15px;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          margin-top: 15px;
         }
 
         .info-card {
-          background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-          border-radius: 10px;
+          background: #f9fafb;
           padding: 12px;
+          border-radius: 10px;
           text-align: center;
         }
 
-        .info-card-label {
-          font-size: 0.8em;
-          color: #555;
-          margin-bottom: 4px;
+        .info-label {
+          font-size: 0.75em;
+          color: #666;
+          text-transform: uppercase;
+          font-weight: 600;
+          margin-bottom: 5px;
         }
 
-        .info-card-value {
+        .info-value {
           font-size: 1.2em;
-          font-weight: bold;
+          font-weight: 700;
           color: #333;
-        }
-
-        .mode-description {
-          font-size: 0.85em;
-          color: #065f46;
-          background: #d1fae5;
-          padding: 10px;
-          border-radius: 6px;
-          margin-top: 10px;
         }
       `}</style>
 
       <div className="transmitter-header">
-        <h2>{schemaLabel} Transmitter</h2>
+        <h2>{config.name} Transmitter</h2>
         <p className="subtitle">
-          {schemaRange} • {isSingle ? '2x faster - 1 tone per char' : isUltrasonic ? 'No voice interference' : 'Speech-friendly'}
+          {config.range} • {config.description}
         </p>
-        <span className="badge">{schemaIcon} {schemaLabel}</span>
+        <span className="badge">
+          {config.icon} {config.name}
+        </span>
       </div>
 
       <div className="input-section">
         <textarea
           className="message-input"
-          placeholder="Type your message here..."
+          placeholder="Enter your message..."
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={e => setMessage(e.target.value)}
           disabled={isPlaying}
         />
-        <div className="char-count">{message.length} characters</div>
       </div>
 
-      <div className="settings-section">
-        <div className="settings-title">Transmission Mode</div>
-        <div className="mode-selector">
-          <button
-            className={`mode-button ${playbackMode === 'basic' ? 'active' : ''}`}
-            onClick={() => setPlaybackMode('basic')}
-            disabled={isPlaying}
-          >
-            Basic
-          </button>
-          <button
-            className={`mode-button ${playbackMode === 'repeat' ? 'active' : ''}`}
-            onClick={() => setPlaybackMode('repeat')}
-            disabled={isPlaying}
-          >
-            Repeat (2x)
-          </button>
-          <button
-            className={`mode-button ${playbackMode === 'checksum' ? 'active' : ''}`}
-            onClick={() => setPlaybackMode('checksum')}
-            disabled={isPlaying}
-          >
-            CRC16
-          </button>
-          <button
-            className={`mode-button ${playbackMode === 'ecc' ? 'active' : ''}`}
-            onClick={() => setPlaybackMode('ecc')}
-            disabled={isPlaying}
-          >
-            🛡️ ECC
-          </button>
+      <div className="controls-section">
+        <div className="control-group">
+          <label className="control-label">Transmission Mode</label>
+          <div className="mode-selector">
+            <button
+              className={`mode-button ${playbackMode === 'basic' ? 'active' : ''}`}
+              onClick={() => setPlaybackMode('basic')}
+              disabled={isPlaying}
+            >
+              📡 Basic
+            </button>
+            <button
+              className={`mode-button ${playbackMode === 'repeat' ? 'active' : ''}`}
+              onClick={() => setPlaybackMode('repeat')}
+              disabled={isPlaying}
+            >
+              🔁 Repeat (2x)
+            </button>
+            <button
+              className={`mode-button ${playbackMode === 'crc' ? 'active' : ''}`}
+              onClick={() => setPlaybackMode('crc')}
+              disabled={isPlaying}
+            >
+              ✅ CRC16
+            </button>
+            <button
+              className={`mode-button ${playbackMode === 'ecc' ? 'active' : ''}`}
+              onClick={() => setPlaybackMode('ecc')}
+              disabled={isPlaying}
+            >
+              🛡️ ECC
+            </button>
+          </div>
         </div>
 
-        {playbackMode === 'basic' && (
-          <div className="mode-description">
-            ⚡ Fast transmission - Use in quiet environments
-          </div>
-        )}
-        {playbackMode === 'repeat' && (
-          <div className="mode-description">
-            🔁 Repetition code - Each tone 2x for reliability (2x duration)
-          </div>
-        )}
-        {playbackMode === 'checksum' && (
-          <div className="mode-description">
-            ✓ CRC16 checksum - Validates data integrity with 2 extra tones
-          </div>
-        )}
-        {playbackMode === 'ecc' && (
-          <div className="mode-description">
-            🛡️ Full error correction - 3x repetition + CRC16 + interleaving. Best reliability! (3x duration)
-          </div>
-        )}
-
-        <div className="settings-title" style={{ marginTop: '15px' }}>
-          Timing Settings (Voice-Optimized Defaults)
-        </div>
-        <div className="setting-row">
-          <div className="setting-item">
-            <label className="setting-label">Tone Duration (ms)</label>
-            <input
-              type="number"
-              className="setting-input"
-              value={toneDuration}
-              onChange={(e) => setToneDuration(parseInt(e.target.value) || 250)}
-              min="50"
-              max="1000"
-              step="50"
-              disabled={isPlaying}
-            />
-          </div>
-          <div className="setting-item">
-            <label className="setting-label">Gap Duration (ms)</label>
-            <input
-              type="number"
-              className="setting-input"
-              value={toneGap}
-              onChange={(e) => setToneGap(parseInt(e.target.value) || 40)}
-              min="10"
-              max="500"
-              step="10"
-              disabled={isPlaying}
-            />
+        <div className="control-group">
+          <label className="control-label">Timing (ms)</label>
+          <div className="slider-group">
+            <div className="slider-item">
+              <label>
+                Tone Duration:{' '}
+                <span className="slider-value">{toneDuration}ms</span>
+              </label>
+              <input
+                type="range"
+                min="50"
+                max="500"
+                step="10"
+                value={toneDuration}
+                onChange={e => setToneDuration(Number(e.target.value))}
+                disabled={isPlaying}
+              />
+            </div>
+            <div className="slider-item">
+              <label>
+                Tone Gap: <span className="slider-value">{toneGap}ms</span>
+              </label>
+              <input
+                type="range"
+                min="10"
+                max="200"
+                step="5"
+                value={toneGap}
+                onChange={e => setToneGap(Number(e.target.value))}
+                disabled={isPlaying}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="control-section">
+      <div className="action-buttons">
         <button
-          className="control-button play-button"
+          className="play-button"
           onClick={handlePlay}
           disabled={isPlaying || !message.trim()}
         >
-          {isPlaying ? 'Playing...' : 'Play Message'}
+          {isPlaying ? '⏳ Playing...' : '▶️ Play'}
         </button>
-        <button
-          className="control-button stop-button"
-          onClick={handleStop}
-          disabled={!isPlaying}
-        >
-          Stop
-        </button>
+        {isPlaying && (
+          <button className="stop-button" onClick={handleStop}>
+            ⏹️ Stop
+          </button>
+        )}
       </div>
 
-      {isPlaying && (
+      {(isPlaying || progress > 0) && (
         <div className="progress-section">
-          <div className="progress-label">Transmission Progress</div>
+          <div className="control-label">Progress: {progress}%</div>
           <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${(progress / totalTones) * 100}%` }}
-            />
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
           </div>
-          <div className="progress-text">
-            {progress} / {totalTones} tones
+          <div className="info-display">
+            <div className="info-card">
+              <div className="info-label">Total Tones</div>
+              <div className="info-value">{totalTones}</div>
+            </div>
+            <div className="info-card">
+              <div className="info-label">Est. Time</div>
+              <div className="info-value">
+                {((totalTones * (toneDuration + toneGap)) / 1000).toFixed(1)}s
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="info-section">
-        <div className="info-card">
-          <div className="info-card-label">Estimated Duration</div>
-          <div className="info-card-value">{getEstimatedDuration().toFixed(1)}s</div>
-        </div>
-        <div className="info-card">
-          <div className="info-card-label">Total Tones</div>
-          <div className="info-card-value">
-            {message.trim()
-              ? (() => {
-                  try {
-                    let count = convertFunction(message).length;
-                    if (playbackMode === 'repeat') count *= 2;
-                    if (playbackMode === 'checksum') count += 1;
-                    return count;
-                  } catch {
-                    return 0;
-                  }
-                })()
-              : 0}
+      {message && !isPlaying && (
+        <div className="info-display" style={{ marginTop: '10px' }}>
+          <div className="info-card">
+            <div className="info-label">Message Length</div>
+            <div className="info-value">{message.length}</div>
+          </div>
+          <div className="info-card">
+            <div className="info-label">Tones to Send</div>
+            <div className="info-value">{getTransmissionInfo()}</div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
