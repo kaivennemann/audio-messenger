@@ -55,7 +55,7 @@ export default function FrequencyDetector() {
       const binWidth = sampleRate / analyser.fftSize;
 
       const minBin = Math.floor(2000 / binWidth);
-      const maxBin = Math.ceil(5000 / binWidth);
+      const maxBin = Math.ceil(8200 / binWidth);
 
       let maxAmplitude = 0;
       let peakBin = minBin;

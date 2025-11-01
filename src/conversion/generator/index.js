@@ -39,7 +39,7 @@ export function ultrasonicConstructor(alphabet) {
 export function basicConstructor(alphabet) {
   return new SchemaGenerator({
     alphabet,
-    filePath: '../schema/basic.json',
+    filePath: '../schema/basic-old.json',
     minHz: 3000,
     maxHz: 8000,
     bands: 50,
