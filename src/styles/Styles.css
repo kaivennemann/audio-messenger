@@ -73,8 +73,9 @@ body {
 
 .sender {
   font-weight: 400;
-  color: #6b7280; /* muted gray */
-  font-size: 13px;
+  color: #7b818c; /* muted gray */
+  font-size: 16px;
+  padding-right: 6px;
 }
 
 .timestamp {
@@ -86,6 +87,8 @@ body {
   margin: 0;
   color: #374151;
   display: inline;
+  font-size: 22px; /* increased message text size */
+  line-height: 1.8; /* improve readability */
 }
 
 /* Input Bar */
