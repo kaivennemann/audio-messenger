@@ -1,8 +1,8 @@
-import "./styles/App.css";
+import './styles/App.css';
 // import background from "./static/background.jpg";
-import logo from "./static/logo.svg";
-import PageHeader from "./components/PageHeader.js";
-import SoundCreator from "./components/SoundCreator.js";
+import logo from './static/logo.svg';
+import PageHeader from './components/PageHeader.js';
+import SoundCreator from './components/SoundCreator.js';
 
 function App() {
   return (

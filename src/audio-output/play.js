@@ -1,25 +1,32 @@
 import * as Tone from 'tone';
 
 function play(frequencyArray, durationPerNote) {
-  // Create a synth and connect it to the main output (speakers)
-  const synth = new Tone.Synth().toDestination();
+  // 1. Create a Tone.Synth and connect it to the main output.
+  // The Tone.Synth already includes an internal oscillator and an envelope.
+  const synth = new Tone.Synth({
+    // 2. Explicitly set the oscillator type to 'sine' for a "nice sine wave."
+    oscillator: {
+      type: 'sine',
+    },
+    // Optional: Set a faster attack/release for a cleaner note separation
+    envelope: {
+      attack: 0.01,
+      release: durationPerNote * 0.3, // release slightly before the next note starts
+    },
+  }).toDestination();
 
   // Initialize the starting time for the first note
   let startTime = Tone.now();
 
   // Iterate over each frequency in the provided array
   frequencyArray.forEach(frequency => {
-    // Schedule the note to start at the current 'startTime'
+    // Schedule the note's envelope (attack and release)
     // Arguments: (note/frequency, duration, time)
     synth.triggerAttackRelease(frequency, durationPerNote, startTime);
 
     // Increment the startTime by the duration of the note just scheduled.
-    // This ensures the next note starts exactly when the previous one ends (or should release).
     startTime += durationPerNote;
   });
-
-  // Note: For scheduling to work reliably, ensure Tone.start() has been called
-  // at some point when the user first interacts with the page (e.g., in a button click handler).
 }
 
 export default play;
