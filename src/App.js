@@ -89,10 +89,10 @@ function App() {
         }
       `}</style>
 
-      <header className="App-header">
+      {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <PageHeader className='page-header' />
-      </header>
+      </header> */}
 
       <div className="mode-toggle">
         <button
@@ -125,15 +125,21 @@ function App() {
         <div className="dual-mode">
           <div>
             <h3 className="section-header">Transmit</h3>
-            {schemaMode === 'single' && <VoiceTransmitter schemaType="single" />}
-            {schemaMode === 'ultrasonic' && <VoiceTransmitter schemaType="ultrasonic" />}
+            {schemaMode === 'single' && (
+              <VoiceTransmitter schemaType="single" />
+            )}
+            {schemaMode === 'ultrasonic' && (
+              <VoiceTransmitter schemaType="ultrasonic" />
+            )}
             {schemaMode === 'voice' && <VoiceTransmitter schemaType="voice" />}
             {schemaMode === 'basic' && <AudioTransmitter />}
           </div>
           <div>
             <h3 className="section-header">Receive</h3>
             {schemaMode === 'single' && <VoiceReceiver schemaType="single" />}
-            {schemaMode === 'ultrasonic' && <VoiceReceiver schemaType="ultrasonic" />}
+            {schemaMode === 'ultrasonic' && (
+              <VoiceReceiver schemaType="ultrasonic" />
+            )}
             {schemaMode === 'voice' && <VoiceReceiver schemaType="voice" />}
             {schemaMode === 'basic' && <RobustFrequencyDetector />}
           </div>
