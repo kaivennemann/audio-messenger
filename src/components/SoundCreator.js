@@ -1,18 +1,15 @@
-import React from "react";
-import * as Tone from "tone";
+import React from 'react';
+import play from '../audio-output/play.js';
 
-function play() {
-  //create a synth and connect it to the main output (your speakers)
-  const synth = new Tone.Synth().toDestination();
-
-  //play a middle 'C' for the duration of an 8th note
-  synth.triggerAttackRelease("C7", "8n");
+function playNote() {
+  // play([523, 659, 784, 1047], 0.3);
+  play([2000], 3.3);
 }
 
 function SoundCreator({ className }) {
   return (
     <div className={className}>
-      <button onClick={play}>Play</button>
+      <button onClick={playNote}>Play</button>
     </div>
   );
 }
