@@ -40,10 +40,10 @@ export function basicConstructor(alphabet) {
   return new SchemaGenerator({
     alphabet,
     filePath: '../schema/basic.json',
-    minHz: 400,
+    minHz: 3000,
     maxHz: 8000,
     bands: 50,
-    spacingMode: 'linear',
+    spacingMode: 'logarithmic',
   });
 }
 
