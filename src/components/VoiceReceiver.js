@@ -48,7 +48,6 @@ export default function VoiceReceiver({
       startTimeRef.current = Date.now();
       setDetectionBuffer([]);
       setDetectedMessage('');
-      setEccStatus(null);
 
       setIsRecording(true);
       detectPeakFrequency();
@@ -80,10 +79,8 @@ export default function VoiceReceiver({
 
       if (message) {
         setDetectedMessage(message);
-        setEccStatus(status);
       } else {
         setDetectedMessage('[No message detected]');
-        setEccStatus(null);
       }
 
       if (onMessageReceived && message) {

@@ -1,74 +1,62 @@
-import { LogSchemaGenerator } from './LogSchemaGenerator.js';
-import { BasicSchemaGenerator } from './BasicSchemaGenerator.js';
+import { SchemaGenerator } from './SchemaGenerator.js';
 
 /**
  * Voice-Optimized Schema Generator
- * Focuses on frequencies present in human speech (85Hz - 4000Hz)
- * This range captures:
- * - Fundamental frequencies: 85-255 Hz (male) and 165-255 Hz (female)
- * - First formants (vowel sounds): 200-1200 Hz
- * - Second formants: 600-3000 Hz
- * - Consonants and clarity: 2000-4000 Hz
+ * Focuses on frequencies present in human speech (300Hz - 3500Hz)
+ * Uses logarithmic spacing for better pitch perception
  */
 export function voiceConstructor(alphabet) {
-  const b = new LogSchemaGenerator(
+  return new SchemaGenerator({
     alphabet,
-    '../schema/voice.json',
-    300,
-    3500,
-    40
-  );
-
-  return b;
+    filePath: '../schema/voice.json',
+    minHz: 300,
+    maxHz: 3500,
+    bands: 40,
+    spacingMode: 'logarithmic',
+  });
 }
 
 /**
  * Ultrasonic Schema Generator
- * Uses frequencies above human speech (8000-18000 Hz)
- * This range is:
- * - Above fundamental voice frequencies (85-255 Hz)
- * - Above most consonants and sibilants (up to 8000 Hz)
- * - Still audible to most people under 40
- * - Minimal interference from background conversation
- * - Higher frequencies = less environmental noise
+ * Uses frequencies above human speech (8000-17000 Hz)
+ * Minimal interference from background conversation
  */
 export function ultrasonicConstructor(alphabet) {
-  const b = new BasicSchemaGenerator(
+  return new SchemaGenerator({
     alphabet,
-    '../schema/ultrasonic.json',
-    8000,
-    17000,
-    35
-  );
-
-  return b;
+    filePath: '../schema/ultrasonic.json',
+    minHz: 8000,
+    maxHz: 17000,
+    bands: 35,
+    spacingMode: 'linear',
+  });
 }
 
+/**
+ * Basic Schema Generator
+ * Original frequency range (400-8000 Hz)
+ */
 export function basicConstructor(alphabet) {
-  const b = new BasicSchemaGenerator(
+  return new SchemaGenerator({
     alphabet,
-    '../schema/basic.json',
-    400,
-    8000,
-    50
-  );
-
-  return b;
+    filePath: '../schema/basic.json',
+    minHz: 400,
+    maxHz: 8000,
+    bands: 50,
+    spacingMode: 'linear',
+  });
 }
 
 /**
  * Single-Tone Schema Generator
- * Uses exactly ONE frequency per character for maximum speed
- * Starting at 2000 Hz
+ * Uses exactly ONE frequency per character for maximum speed (2x faster)
  */
 export function singleConstructor(alphabet) {
-  const b = new BasicSchemaGenerator(
+  return new SchemaGenerator({
     alphabet,
-    '../schema/single.json',
-    2000,
-    6000,
-    alphabet.length + 1
-  );
-
-  return b;
+    filePath: '../schema/single.json',
+    minHz: 2000,
+    maxHz: 6000,
+    spacingMode: 'single',
+  });
 }
