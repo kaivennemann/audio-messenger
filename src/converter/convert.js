@@ -1,10 +1,4 @@
 function stringToBinary(str) {
-  // return str
-  //   .split('')
-  //   .map(char => {
-  //     return char.charCodeAt(0).toString(2).padStart(8, '0');
-  //   })
-  //   .join(' ');
   return str
     .split('')
     .map(char => {
@@ -30,14 +24,14 @@ export default class AudioConverter {
     this.highFreq = highFreq;
   }
 
-  encode(input) {
+  textToHz(input) {
     const binary = stringToBinary(input);
     console.log('Binary representation:', binary);
 
     return binary.map(bit => (bit === 0 ? this.lowFreq : this.highFreq));
   }
 
-  decode(input) {
+  hzToText(input) {
     const binary = input.map(freq => (freq === this.lowFreq ? 0 : 1));
 
     const output = binaryToString(binary);

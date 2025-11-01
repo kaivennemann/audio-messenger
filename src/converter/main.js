@@ -10,8 +10,8 @@ function main() {
     'Hz'
   );
 
-  let encoded = converter.encode('Hello, World!');
-  let decoded = converter.decode(encoded);
+  let encoded = converter.textToHz('Hello, World!');
+  let decoded = converter.hzToText(encoded);
 
   console.log('Encoded frequencies:', encoded);
   console.log('Decoded string:', decoded);
