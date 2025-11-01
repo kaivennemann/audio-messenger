@@ -1,6 +1,5 @@
 import './styles/App.css';
 import AudioTransmitter from './components/AudioTransmitter.js';
-import RobustFrequencyDetector from './components/RobustFrequencyDetector.js';
 import VoiceTransmitter from './components/VoiceTransmitter.js';
 import VoiceReceiver from './components/VoiceReceiver.js';
 import { useState } from 'react';
@@ -139,7 +138,6 @@ function App() {
               <VoiceReceiver schemaType="ultrasonic" />
             )}
             {schemaMode === 'voice' && <VoiceReceiver schemaType="voice" />}
-            {schemaMode === 'basic' && <RobustFrequencyDetector />}
           </div>
         </div>
       </div>
