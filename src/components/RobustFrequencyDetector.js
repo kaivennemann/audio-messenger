@@ -4,7 +4,7 @@ import {
   processFrequencyDetections,
   convertFromHzToTextRobust,
   CONFIG,
-} from '../conversion/parser/robust';
+} from '../conversion/convert';
 
 export default function RobustFrequencyDetector({ onMessageReceived }) {
   const [isRecording, setIsRecording] = useState(false);

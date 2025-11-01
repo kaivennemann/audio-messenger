@@ -1,4 +1,24 @@
-import schema from './../schema/basic.json' with { type: 'json' };
+import schema from './schema/basic.json' with { type: 'json' };
+
+export function convertFromTextToHz(data) {
+  data = '~' + data + '~';
+
+  const arredData = data.split('');
+
+  const result = [];
+
+  for (let char of arredData) {
+    if (!schema.frequencyMap[char]) {
+      throw new Error(`cannot use char: ${char}`);
+    }
+
+    for (let item of schema.frequencyMap[char]) {
+      result.push(item);
+    }
+  }
+
+  return result;
+}
 
 /**
  * Robust frequency matching with tolerance bands
@@ -49,19 +69,16 @@ export function findClosestValidFrequency(
  * @param {Object} options - Configuration options
  * @returns {string} - Decoded text
  */
-export function convertFromHzToTextRobust(
-  frequencyArray,
-  options = {}
-) {
+export function convertFromHzToTextRobust(frequencyArray, options = {}) {
   const tolerance = options.tolerance || CONFIG.FREQUENCY_TOLERANCE_PERCENT;
 
   // First, map detected frequencies to closest valid frequencies
-  const normalizedFrequencies = frequencyArray.map((freq) =>
+  const normalizedFrequencies = frequencyArray.map(freq =>
     findClosestValidFrequency(freq, tolerance)
   );
 
   // Filter out null values (frequencies that couldn't be matched)
-  const validFrequencies = normalizedFrequencies.filter((f) => f !== null);
+  const validFrequencies = normalizedFrequencies.filter(f => f !== null);
 
   if (validFrequencies.length === 0) {
     return '';

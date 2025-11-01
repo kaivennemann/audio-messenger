@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { convertFromTextToHz } from '../conversion/parser/basic';
+import { convertFromTextToHz } from '../conversion/convert';
 import { AudioTonePlayer } from '../conversion/player';
 
 export default function AudioTransmitter() {
