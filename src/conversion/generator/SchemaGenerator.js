@@ -68,6 +68,8 @@ export class SchemaGenerator {
         map[symbol] = this.generateRandFrequencies(minHz, maxHz, bands);
         return map;
       }, {});
+
+      this.valid_hz = Object.values(this.frequencyMap).flat();
       return;
     } else {
       // Linear spacing (default)
