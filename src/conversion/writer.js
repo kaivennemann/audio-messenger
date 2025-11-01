@@ -1,16 +1,27 @@
-import {writeFile, mkdir} from 'fs/promises'
-import {dirname} from 'path'
-import { Basic } from './generator/basic.js'
-import { ALPHABET } from './constants.js'
+import { writeFile, mkdir } from 'fs/promises';
+import { dirname } from 'path';
+import { ALPHABET } from './constants.js';
+import { basicConstructor } from './generator/basic.js';
+import { singleConstructor } from './generator/single.js';
+import { ultrasonicConstructor } from './generator/ultrasonic.js';
+import { voiceConstructor } from './generator/voice.js';
 
-const d = new Basic(ALPHABET);
+const d = ultrasonicConstructor(ALPHABET);
+const b = basicConstructor(ALPHABET);
 
-try {
+doWrite(d);
+doWrite(b);
+doWrite(singleConstructor(ALPHABET));
+doWrite(voiceConstructor(ALPHABET));
+
+async function doWrite(d) {
+  try {
     // Create directory if it doesn't exist
     await mkdir(dirname(d.SCHEMA_FILE), { recursive: true });
-    
+
     await writeFile(d.SCHEMA_FILE, d.produceJson());
     console.log('File saved successfully to:', d.SCHEMA_FILE);
-} catch (err) {
+  } catch (err) {
     console.error('Error writing file:', err);
+  }
 }

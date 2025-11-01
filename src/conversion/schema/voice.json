@@ -436,7 +436,6 @@
       300
     ]
   },
-  "description": "Voice-optimized schema using logarithmic frequency spacing",
-  "range": "300-3500 Hz",
-  "bands": 40
+  "bands": 40,
+  "range": "300-3500 Hz"
 }

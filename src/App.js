@@ -1,6 +1,4 @@
 import './styles/App.css';
-import logo from './static/logo.svg';
-import PageHeader from './components/PageHeader.js';
 import AudioTransmitter from './components/AudioTransmitter.js';
 import RobustFrequencyDetector from './components/RobustFrequencyDetector.js';
 import VoiceTransmitter from './components/VoiceTransmitter.js';
