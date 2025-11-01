@@ -12,6 +12,7 @@
     "react-dom": "^19.2.0",
     "react-scripts": "5.0.1",
     "tone": "^15.1.22",
+    "sweetalert2": "^11.26.3",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
