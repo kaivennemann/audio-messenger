@@ -85,7 +85,9 @@ export function addErrorCorrection(frequencies, validHz, options = {}) {
 
   // Add CRC checksum
   if (addCRC) {
-    const crc = calculateCRC16(frequencies);
+    // Convert frequencies to indices for CRC calculation
+    const indices = frequencies.map(f => validHz.indexOf(f));
+    const crc = calculateCRC16(indices);
     const crcIndices = crcToFrequencyIndices(crc, validHz.length);
 
     // Add CRC as two frequency tones
@@ -136,40 +138,29 @@ export function removeErrorCorrection(frequencies, validHz, options = {}) {
   let data = [...frequencies];
   let valid = true;
   let corrected = false;
+  let receivedCRC = null;
+  let receivedCRCIndices = null;
 
-  // Remove and validate CRC
+  // Extract CRC if present (but don't validate yet)
   if (addCRC && data.length >= 2) {
-    const receivedCRCIndices = [
+    receivedCRCIndices = [
       validHz.indexOf(data[data.length - 2]),
       validHz.indexOf(data[data.length - 1]),
     ];
 
-    // Remove CRC frequencies
-    data = data.slice(0, -2);
-
-    // Calculate expected CRC
-    let originalData = data;
-
-    // Remove parity if present
-    if (addParity && data.length >= 2) {
-      originalData = data.slice(0, -2);
-    }
-
-    // Remove repetitions if present
-    if (repetitions > 1) {
-      originalData = derepeat(originalData, repetitions);
-    }
-
-    const expectedCRC = calculateCRC16(originalData);
-    const receivedCRC = frequencyIndicesToCRC(receivedCRCIndices, validHz.length);
-
-    if (expectedCRC !== receivedCRC) {
+    // Check if CRC indices are valid
+    if (receivedCRCIndices[0] === -1 || receivedCRCIndices[1] === -1) {
+      console.warn('Invalid CRC frequencies detected');
       valid = false;
-      console.warn('CRC mismatch! Expected:', expectedCRC, 'Received:', receivedCRC);
+    } else {
+      receivedCRC = frequencyIndicesToCRC(receivedCRCIndices, validHz.length);
     }
+
+    // Remove CRC frequencies from data
+    data = data.slice(0, -2);
   }
 
-  // Remove parity
+  // Remove parity if present
   if (addParity && data.length >= 2) {
     data = data.slice(0, -2);
   }
@@ -181,6 +172,21 @@ export function removeErrorCorrection(frequencies, validHz, options = {}) {
     if (hadErrors) {
       corrected = true;
       console.log('Errors corrected via repetition code');
+    }
+  }
+
+  // Now validate CRC against the de-repeated original data
+  if (addCRC && receivedCRC !== null) {
+    // Convert frequencies to indices for CRC validation
+    const indices = data.map(f => validHz.indexOf(f));
+    const expectedCRC = calculateCRC16(indices);
+
+    if (expectedCRC !== receivedCRC) {
+      valid = false;
+      console.warn('CRC mismatch! Expected:', expectedCRC.toString(16), 'Received:', receivedCRC.toString(16));
+      console.warn('Data length:', data.length, 'Data sample:', data.slice(0, 5));
+    } else {
+      console.log('✅ CRC validated successfully!', expectedCRC.toString(16));
     }
   }
 
@@ -229,59 +235,66 @@ function derepeatWithCorrection(frequencies, repetitions) {
   return { data: result, hadErrors };
 }
 
+
 /**
- * Simple derepeat without error correction
- * @param {Array<number>} frequencies - Repeated frequency array
- * @param {number} repetitions - Number of repetitions
- * @returns {Array<number>} - Original data
+ * Interleave frequencies for burst error resistance
+ * Simple block interleaver: write by rows, read by columns
+ * @param {Array<number>} frequencies - Input frequencies
+ * @param {number} depth - Interleaving depth (number of columns)
+ * @returns {Array<number>} - Interleaved frequencies
  */
-function derepeat(frequencies, repetitions) {
+export function interleave(frequencies, depth = 4) {
+  if (frequencies.length === 0) return [];
+
+  const cols = depth;
+  const rows = Math.ceil(frequencies.length / cols);
   const result = [];
-  for (let i = 0; i < frequencies.length; i += repetitions) {
-    result.push(frequencies[i]);
+
+  // Write data into matrix by rows
+  const matrix = [];
+  for (let i = 0; i < frequencies.length; i++) {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    if (!matrix[row]) matrix[row] = [];
+    matrix[row][col] = frequencies[i];
   }
+
+  // Read data from matrix by columns
+  for (let col = 0; col < cols; col++) {
+    for (let row = 0; row < rows; row++) {
+      if (matrix[row] && matrix[row][col] !== undefined) {
+        result.push(matrix[row][col]);
+      }
+    }
+  }
+
   return result;
 }
 
 /**
- * Interleave frequencies for burst error resistance
- * @param {Array<number>} frequencies - Input frequencies
- * @param {number} depth - Interleaving depth
- * @returns {Array<number>} - Interleaved frequencies
- */
-export function interleave(frequencies, depth = 4) {
-  const result = new Array(frequencies.length);
-  const rows = Math.ceil(frequencies.length / depth);
-
-  for (let i = 0; i < frequencies.length; i++) {
-    const row = i % rows;
-    const col = Math.floor(i / rows);
-    const newIndex = row * depth + col;
-    if (newIndex < frequencies.length) {
-      result[newIndex] = frequencies[i];
-    }
-  }
-
-  return result.filter(f => f !== undefined);
-}
-
-/**
  * Deinterleave frequencies
+ * Reverse of interleave: write by columns, read by rows
  * @param {Array<number>} frequencies - Interleaved frequencies
- * @param {number} depth - Interleaving depth
+ * @param {number} depth - Interleaving depth (number of columns)
  * @returns {Array<number>} - Original order
  */
 export function deinterleave(frequencies, depth = 4) {
-  const result = new Array(frequencies.length);
-  const cols = depth;
-  const rows = Math.ceil(frequencies.length / depth);
+  if (frequencies.length === 0) return [];
 
-  for (let i = 0; i < frequencies.length; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const newIndex = col * rows + row;
-    if (newIndex < frequencies.length) {
-      result[newIndex] = frequencies[i];
+  const cols = depth;
+  const rows = Math.ceil(frequencies.length / cols);
+  const result = new Array(frequencies.length);
+
+  // Write data back: interleaved data was read column-by-column
+  // So we write it back column-by-column
+  let idx = 0;
+  for (let col = 0; col < cols && idx < frequencies.length; col++) {
+    for (let row = 0; row < rows && idx < frequencies.length; row++) {
+      const originalIndex = row * cols + col;
+      if (originalIndex < frequencies.length) {
+        result[originalIndex] = frequencies[idx];
+        idx++;
+      }
     }
   }
 
@@ -354,7 +367,7 @@ export function hammingDecode(code) {
   return { data, corrected };
 }
 
-export default {
+const errorCorrection = {
   calculateCRC16,
   addErrorCorrection,
   removeErrorCorrection,
@@ -363,3 +376,5 @@ export default {
   hammingEncode,
   hammingDecode,
 };
+
+export default errorCorrection;

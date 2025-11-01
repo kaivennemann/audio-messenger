@@ -116,9 +116,6 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
         try {
           const ec = await import('../conversion/errorCorrection.js');
 
-          // Try ECC decoding (deinterleave + remove error correction)
-          let decodedFreqs = frequencies;
-
           // Try deinterleaving
           const deinterleaved = ec.deinterleave(frequencies, 4);
 
@@ -192,8 +189,17 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
       const binWidth = sampleRate / analyser.fftSize;
 
       // Focus on appropriate frequency range
-      const minFreq = isUltrasonic ? 7500 : 250;
-      const maxFreq = isUltrasonic ? 17500 : 3600;
+      let minFreq, maxFreq;
+      if (isSingle) {
+        minFreq = 1900;
+        maxFreq = 6100;
+      } else if (isUltrasonic) {
+        minFreq = 7500;
+        maxFreq = 17500;
+      } else {
+        minFreq = 250;
+        maxFreq = 3600;
+      }
       const minBin = Math.floor(minFreq / binWidth);
       const maxBin = Math.ceil(maxFreq / binWidth);
 
