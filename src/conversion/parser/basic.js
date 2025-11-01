@@ -1,6 +1,6 @@
 import schema from './../schema/basic.json' with { type: 'json' };
 
-export function convertText(data) {
+export function convertFromTextToHz(data) {
   data = '~' + data + '~';
 
   const arredData = data.split('');
@@ -20,7 +20,7 @@ export function convertText(data) {
   return result;
 }
 
-export function convertHz(frequencyArray) {
+export function convertFromHzToText(frequencyArray) {
   // Create reverse lookup map
   const reverseMap = {};
   for (const [char, frequencies] of Object.entries(schema.frequencyMap)) {
