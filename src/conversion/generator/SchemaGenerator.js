@@ -65,7 +65,11 @@ export class SchemaGenerator {
         tonesPerSymbol || Math.ceil(Math.log(symbolCount) / Math.log(bands));
     } else if (spacingMode === 'random' && tonesPerSymbol) {
       this.frequencyMap = this.alphabet.reduce((map, symbol, index) => {
-        map[symbol] = this.generateRandFrequencies(minHz, maxHz, bands);
+        map[symbol] = this.generateRandFrequencies(
+          minHz,
+          maxHz,
+          tonesPerSymbol
+        );
         return map;
       }, {});
 
