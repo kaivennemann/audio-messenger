@@ -1,9 +1,9 @@
 
-const lowerLetters = 'abcdefghijklmnopqrstuvwxyz'.split('');
-const numbers = '1234567890'.split('');
-const upperLetters = lowerLetters.map((l) => l.toUpperCase())
-const special = '-/.,#$%^&*()!\''
+const LOWER_LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
+const NUMBER = '1234567890'.split('');
+const UPPER_LETTERS = LOWER_LETTERS.map((l) => l.toUpperCase())
+const SPECIAL = '-/.,#$%^&*()!\''
 
-export const alphabet = [
+export const ALPHABET = [
 
 ]
