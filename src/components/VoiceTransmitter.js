@@ -365,20 +365,6 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
             >
               🔁 Repeat (2x)
             </button>
-            <button
-              className={`mode-button ${playbackMode === 'crc' ? 'active' : ''}`}
-              onClick={() => setPlaybackMode('crc')}
-              disabled={isPlaying}
-            >
-              ✅ CRC16
-            </button>
-            <button
-              className={`mode-button ${playbackMode === 'ecc' ? 'active' : ''}`}
-              onClick={() => setPlaybackMode('ecc')}
-              disabled={isPlaying}
-            >
-              🛡️ ECC
-            </button>
           </div>
         </div>
 
