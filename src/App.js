@@ -3,8 +3,13 @@ import logo from './static/logo.svg';
 import PageHeader from './components/PageHeader.js';
 import AudioTransmitter from './components/AudioTransmitter.js';
 import RobustFrequencyDetector from './components/RobustFrequencyDetector.js';
+import VoiceTransmitter from './components/VoiceTransmitter.js';
+import VoiceReceiver from './components/VoiceReceiver.js';
+import { useState } from 'react';
 
 function App() {
+  const [schemaMode, setSchemaMode] = useState('ultrasonic');
+
   return (
     <div className="App">
       <style>{`
@@ -89,15 +94,40 @@ function App() {
         <PageHeader className='page-header' />
       </header>
 
+      <div className="mode-toggle">
+        <button
+          className={`mode-button ${schemaMode === 'ultrasonic' ? 'active' : ''}`}
+          onClick={() => setSchemaMode('ultrasonic')}
+        >
+          🚀 Ultrasonic (8-17kHz) - No Voice Interference
+        </button>
+        <button
+          className={`mode-button ${schemaMode === 'voice' ? 'active' : ''}`}
+          onClick={() => setSchemaMode('voice')}
+        >
+          🎤 Voice Range (300-3500Hz)
+        </button>
+        <button
+          className={`mode-button ${schemaMode === 'basic' ? 'active' : ''}`}
+          onClick={() => setSchemaMode('basic')}
+        >
+          📻 Basic (400-8000Hz)
+        </button>
+      </div>
+
       <div className="components-container">
         <div className="dual-mode">
           <div>
             <h3 className="section-header">Transmit</h3>
-            <AudioTransmitter />
+            {schemaMode === 'ultrasonic' && <VoiceTransmitter schemaType="ultrasonic" />}
+            {schemaMode === 'voice' && <VoiceTransmitter schemaType="voice" />}
+            {schemaMode === 'basic' && <AudioTransmitter />}
           </div>
           <div>
             <h3 className="section-header">Receive</h3>
-            <RobustFrequencyDetector />
+            {schemaMode === 'ultrasonic' && <VoiceReceiver schemaType="ultrasonic" />}
+            {schemaMode === 'voice' && <VoiceReceiver schemaType="voice" />}
+            {schemaMode === 'basic' && <RobustFrequencyDetector />}
           </div>
         </div>
       </div>
