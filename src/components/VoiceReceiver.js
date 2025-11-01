@@ -5,22 +5,47 @@ import {
   convertVoiceHzToText,
   VOICE_CONFIG,
   voiceSchema,
-} from '../conversion/parser/voice';
+} from '../conversion/parser/voice.js';
 import {
   findClosestUltrasonicFrequency,
   processUltrasonicDetections,
   convertUltrasonicHzToText,
   ULTRASONIC_CONFIG,
   ultrasonicSchema,
-} from '../conversion/parser/ultrasonic';
+} from '../conversion/parser/ultrasonic.js';
+import {
+  findClosestSingleFrequency,
+  processSingleDetections,
+  convertSingleHzToText,
+  SINGLE_CONFIG,
+  singleSchema,
+} from '../conversion/parser/single.js';
 
 export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' }) {
+  const isSingle = schemaType === 'single';
   const isUltrasonic = schemaType === 'ultrasonic';
-  const config = isUltrasonic ? ULTRASONIC_CONFIG : VOICE_CONFIG;
-  const findClosestFrequency = isUltrasonic ? findClosestUltrasonicFrequency : findClosestVoiceFrequency;
-  const processDetections = isUltrasonic ? processUltrasonicDetections : processVoiceDetections;
-  const convertHzToText = isUltrasonic ? convertUltrasonicHzToText : convertVoiceHzToText;
-  const validHz = isUltrasonic ? ultrasonicSchema.valid_hz : voiceSchema.valid_hz;
+
+  let config, findClosestFrequency, processDetections, convertHzToText, validHz;
+
+  if (isSingle) {
+    config = SINGLE_CONFIG;
+    findClosestFrequency = findClosestSingleFrequency;
+    processDetections = processSingleDetections;
+    convertHzToText = convertSingleHzToText;
+    validHz = singleSchema.valid_hz;
+  } else if (isUltrasonic) {
+    config = ULTRASONIC_CONFIG;
+    findClosestFrequency = findClosestUltrasonicFrequency;
+    processDetections = processUltrasonicDetections;
+    convertHzToText = convertUltrasonicHzToText;
+    validHz = ultrasonicSchema.valid_hz;
+  } else {
+    config = VOICE_CONFIG;
+    findClosestFrequency = findClosestVoiceFrequency;
+    processDetections = processVoiceDetections;
+    convertHzToText = convertVoiceHzToText;
+    validHz = voiceSchema.valid_hz;
+  }
 
   const [isRecording, setIsRecording] = useState(false);
   const [peakFreq, setPeakFreq] = useState(null);
@@ -225,9 +250,21 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
     };
   }, []);
 
-  const schemaLabel = isUltrasonic ? 'Ultrasonic' : 'Voice-Optimized';
-  const schemaRange = isUltrasonic ? '8000-17000 Hz' : '300-3500 Hz';
-  const schemaIcon = isUltrasonic ? '🚀' : '🎤';
+  let schemaLabel, schemaRange, schemaIcon;
+
+  if (isSingle) {
+    schemaLabel = 'Single-Tone';
+    schemaRange = '2000-6000 Hz';
+    schemaIcon = '⚡';
+  } else if (isUltrasonic) {
+    schemaLabel = 'Ultrasonic';
+    schemaRange = '8000-17000 Hz';
+    schemaIcon = '🚀';
+  } else {
+    schemaLabel = 'Voice-Optimized';
+    schemaRange = '300-3500 Hz';
+    schemaIcon = '🎤';
+  }
 
   return (
     <div className="voice-receiver">
@@ -481,7 +518,7 @@ export default function VoiceReceiver({ onMessageReceived, schemaType = 'voice' 
       <div className="receiver-header">
         <h2>{schemaLabel} Receiver</h2>
         <p className="subtitle">
-          {schemaRange} • {isUltrasonic ? 'No voice interference' : 'Speech-optimized'}
+          {schemaRange} • {isSingle ? '2x faster - 1 tone per char' : isUltrasonic ? 'No voice interference' : 'Speech-optimized'}
         </p>
         <span className="badge">{schemaIcon} {schemaLabel}</span>
       </div>

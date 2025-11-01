@@ -96,6 +96,12 @@ function App() {
 
       <div className="mode-toggle">
         <button
+          className={`mode-button ${schemaMode === 'single' ? 'active' : ''}`}
+          onClick={() => setSchemaMode('single')}
+        >
+          ⚡ Single-Tone (2-6kHz) - FASTEST
+        </button>
+        <button
           className={`mode-button ${schemaMode === 'ultrasonic' ? 'active' : ''}`}
           onClick={() => setSchemaMode('ultrasonic')}
         >
@@ -119,12 +125,14 @@ function App() {
         <div className="dual-mode">
           <div>
             <h3 className="section-header">Transmit</h3>
+            {schemaMode === 'single' && <VoiceTransmitter schemaType="single" />}
             {schemaMode === 'ultrasonic' && <VoiceTransmitter schemaType="ultrasonic" />}
             {schemaMode === 'voice' && <VoiceTransmitter schemaType="voice" />}
             {schemaMode === 'basic' && <AudioTransmitter />}
           </div>
           <div>
             <h3 className="section-header">Receive</h3>
+            {schemaMode === 'single' && <VoiceReceiver schemaType="single" />}
             {schemaMode === 'ultrasonic' && <VoiceReceiver schemaType="ultrasonic" />}
             {schemaMode === 'voice' && <VoiceReceiver schemaType="voice" />}
             {schemaMode === 'basic' && <RobustFrequencyDetector />}

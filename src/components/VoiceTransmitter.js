@@ -1,13 +1,28 @@
 import React, { useState, useRef } from 'react';
-import { convertTextToVoiceHz, VOICE_CONFIG, voiceSchema } from '../conversion/parser/voice';
-import { convertTextToUltrasonicHz, ULTRASONIC_CONFIG, ultrasonicSchema } from '../conversion/parser/ultrasonic';
-import { EnhancedAudioPlayer } from '../conversion/player';
+import { convertTextToVoiceHz, VOICE_CONFIG, voiceSchema } from '../conversion/parser/voice.js';
+import { convertTextToUltrasonicHz, ULTRASONIC_CONFIG, ultrasonicSchema } from '../conversion/parser/ultrasonic.js';
+import { convertTextToSingleHz, SINGLE_CONFIG, singleSchema } from '../conversion/parser/single.js';
+import { EnhancedAudioPlayer } from '../conversion/player.js';
 
 export default function VoiceTransmitter({ schemaType = 'voice' }) {
+  const isSingle = schemaType === 'single';
   const isUltrasonic = schemaType === 'ultrasonic';
-  const config = isUltrasonic ? ULTRASONIC_CONFIG : VOICE_CONFIG;
-  const convertFunction = isUltrasonic ? convertTextToUltrasonicHz : convertTextToVoiceHz;
-  const validHz = isUltrasonic ? ultrasonicSchema.valid_hz : voiceSchema.valid_hz;
+
+  let config, convertFunction, validHz;
+
+  if (isSingle) {
+    config = SINGLE_CONFIG;
+    convertFunction = convertTextToSingleHz;
+    validHz = singleSchema.valid_hz;
+  } else if (isUltrasonic) {
+    config = ULTRASONIC_CONFIG;
+    convertFunction = convertTextToUltrasonicHz;
+    validHz = ultrasonicSchema.valid_hz;
+  } else {
+    config = VOICE_CONFIG;
+    convertFunction = convertTextToVoiceHz;
+    validHz = voiceSchema.valid_hz;
+  }
 
   const [message, setMessage] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -98,9 +113,21 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
     }
   };
 
-  const schemaLabel = isUltrasonic ? 'Ultrasonic' : 'Voice-Optimized';
-  const schemaRange = isUltrasonic ? '8000-17000 Hz' : '300-3500 Hz';
-  const schemaIcon = isUltrasonic ? '🚀' : '🎤';
+  let schemaLabel, schemaRange, schemaIcon;
+
+  if (isSingle) {
+    schemaLabel = 'Single-Tone';
+    schemaRange = '2000-6000 Hz';
+    schemaIcon = '⚡';
+  } else if (isUltrasonic) {
+    schemaLabel = 'Ultrasonic';
+    schemaRange = '8000-17000 Hz';
+    schemaIcon = '🚀';
+  } else {
+    schemaLabel = 'Voice-Optimized';
+    schemaRange = '300-3500 Hz';
+    schemaIcon = '🎤';
+  }
 
   return (
     <div className="audio-transmitter">
@@ -347,7 +374,9 @@ export default function VoiceTransmitter({ schemaType = 'voice' }) {
 
       <div className="transmitter-header">
         <h2>{schemaLabel} Transmitter</h2>
-        <p className="subtitle">{schemaRange} • {isUltrasonic ? 'No voice interference' : 'Speech-friendly'}</p>
+        <p className="subtitle">
+          {schemaRange} • {isSingle ? '2x faster - 1 tone per char' : isUltrasonic ? 'No voice interference' : 'Speech-friendly'}
+        </p>
         <span className="badge">{schemaIcon} {schemaLabel}</span>
       </div>
 
