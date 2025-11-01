@@ -13,7 +13,7 @@ const b = basicConstructor(ALPHABET);
 
 doWrite(d);
 doWrite(b);
-doWrite(singleConstructor(ALPHABET));
+doWrite(singleConstructor([...ALPHABET, ':', '[', ']']));
 doWrite(voiceConstructor(ALPHABET));
 
 async function doWrite(d) {
