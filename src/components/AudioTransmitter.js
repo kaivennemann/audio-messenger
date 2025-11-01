@@ -1,13 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { convertFromTextToHz } from '../conversion/parser/basic';
-import { EnhancedAudioPlayer } from '../conversion/player';
+import { AudioTonePlayer } from '../conversion/player';
 
 export default function AudioTransmitter() {
   const [message, setMessage] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [totalTones, setTotalTones] = useState(0);
-  const [playbackMode, setPlaybackMode] = useState('basic');
   const [toneDuration, setToneDuration] = useState(200);
   const [toneGap, setToneGap] = useState(50);
 
@@ -29,7 +28,7 @@ export default function AudioTransmitter() {
       setIsPlaying(true);
 
       // Create player with current settings
-      playerRef.current = new EnhancedAudioPlayer({
+      playerRef.current = new AudioTonePlayer({
         toneDuration: toneDuration,
         toneGap: toneGap,
         volume: 0.3,
@@ -47,13 +46,7 @@ export default function AudioTransmitter() {
       };
 
       // Play based on selected mode
-      if (playbackMode === 'basic') {
-        await playerRef.current.playSequence(frequencies, onProgress, onComplete);
-      } else if (playbackMode === 'repeat') {
-        await playerRef.current.playWithRepetition(frequencies, 2, onProgress, onComplete);
-      } else if (playbackMode === 'checksum') {
-        await playerRef.current.playWithChecksum(frequencies, onProgress, onComplete);
-      }
+      await playerRef.current.playSequence(frequencies, onProgress, onComplete);
     } catch (error) {
       console.error('Error playing message:', error);
       alert('Error: ' + error.message);
@@ -74,12 +67,6 @@ export default function AudioTransmitter() {
     try {
       const frequencies = convertFromTextToHz(message);
       let toneCount = frequencies.length;
-
-      if (playbackMode === 'repeat') {
-        toneCount *= 2;
-      } else if (playbackMode === 'checksum') {
-        toneCount += 1;
-      }
 
       return (toneCount * (toneDuration + toneGap)) / 1000;
     } catch {
@@ -328,7 +315,7 @@ export default function AudioTransmitter() {
           className="message-input"
           placeholder="Type your message here..."
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={e => setMessage(e.target.value)}
           disabled={isPlaying}
         />
         <div className="char-count">{message.length} characters</div>
@@ -336,45 +323,6 @@ export default function AudioTransmitter() {
 
       <div className="settings-section">
         <div className="settings-title">Transmission Mode</div>
-        <div className="mode-selector">
-          <button
-            className={`mode-button ${playbackMode === 'basic' ? 'active' : ''}`}
-            onClick={() => setPlaybackMode('basic')}
-            disabled={isPlaying}
-          >
-            Basic
-          </button>
-          <button
-            className={`mode-button ${playbackMode === 'repeat' ? 'active' : ''}`}
-            onClick={() => setPlaybackMode('repeat')}
-            disabled={isPlaying}
-          >
-            Repeat (2x)
-          </button>
-          <button
-            className={`mode-button ${playbackMode === 'checksum' ? 'active' : ''}`}
-            onClick={() => setPlaybackMode('checksum')}
-            disabled={isPlaying}
-          >
-            Checksum
-          </button>
-        </div>
-
-        {playbackMode === 'basic' && (
-          <div className="mode-description">
-            Standard transmission - fastest but less reliable in noisy environments
-          </div>
-        )}
-        {playbackMode === 'repeat' && (
-          <div className="mode-description">
-            Each tone repeated twice - more reliable but takes 2x longer
-          </div>
-        )}
-        {playbackMode === 'checksum' && (
-          <div className="mode-description">
-            Adds validation tone at the end - helps verify transmission integrity
-          </div>
-        )}
 
         <div className="settings-title" style={{ marginTop: '15px' }}>
           Timing Settings
@@ -386,7 +334,7 @@ export default function AudioTransmitter() {
               type="number"
               className="setting-input"
               value={toneDuration}
-              onChange={(e) => setToneDuration(parseInt(e.target.value) || 200)}
+              onChange={e => setToneDuration(parseInt(e.target.value) || 200)}
               min="50"
               max="1000"
               step="50"
@@ -399,7 +347,7 @@ export default function AudioTransmitter() {
               type="number"
               className="setting-input"
               value={toneGap}
-              onChange={(e) => setToneGap(parseInt(e.target.value) || 50)}
+              onChange={e => setToneGap(parseInt(e.target.value) || 50)}
               min="10"
               max="500"
               step="10"
@@ -444,7 +392,9 @@ export default function AudioTransmitter() {
       <div className="info-section">
         <div className="info-card">
           <div className="info-card-label">Estimated Duration</div>
-          <div className="info-card-value">{getEstimatedDuration().toFixed(1)}s</div>
+          <div className="info-card-value">
+            {getEstimatedDuration().toFixed(1)}s
+          </div>
         </div>
         <div className="info-card">
           <div className="info-card-label">Total Tones</div>
@@ -453,8 +403,6 @@ export default function AudioTransmitter() {
               ? (() => {
                   try {
                     let count = convertFromTextToHz(message).length;
-                    if (playbackMode === 'repeat') count *= 2;
-                    if (playbackMode === 'checksum') count += 1;
                     return count;
                   } catch {
                     return 0;
