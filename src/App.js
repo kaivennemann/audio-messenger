@@ -1,5 +1,4 @@
 import './styles/App.css';
-import AudioTransmitter from './components/AudioTransmitter.js';
 import VoiceTransmitter from './components/VoiceTransmitter.js';
 import VoiceReceiver from './components/VoiceReceiver.js';
 import { useState } from 'react';
@@ -114,7 +113,7 @@ function App() {
           className={`mode-button ${schemaMode === 'basic' ? 'active' : ''}`}
           onClick={() => setSchemaMode('basic')}
         >
-          📻 Basic (400-8000Hz)
+          📻 Basic (3-8kHz)
         </button>
       </div>
 
@@ -129,7 +128,7 @@ function App() {
               <VoiceTransmitter schemaType="ultrasonic" />
             )}
             {schemaMode === 'voice' && <VoiceTransmitter schemaType="voice" />}
-            {schemaMode === 'basic' && <AudioTransmitter />}
+            {schemaMode === 'basic' && <VoiceTransmitter schemaType="basic" />}
           </div>
           <div>
             <h3 className="section-header">Receive</h3>
@@ -138,6 +137,7 @@ function App() {
               <VoiceReceiver schemaType="ultrasonic" />
             )}
             {schemaMode === 'voice' && <VoiceReceiver schemaType="voice" />}
+            {schemaMode === 'basic' && <VoiceReceiver schemaType="basic" />}
           </div>
         </div>
       </div>
