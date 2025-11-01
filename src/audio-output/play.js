@@ -1,7 +1,7 @@
 import * as Tone from 'tone';
 import AudioConverter from '../converter/convert.js';
 
-function playFrequencies(frequencyArray, durationPerNote) {
+async function playFrequencies(frequencyArray, durationPerNote) {
   // 1. Create a Tone.Synth and connect it to the main output.
   // The Tone.Synth already includes an internal oscillator and an envelope.
   const synth = new Tone.Synth({
@@ -28,16 +28,26 @@ function playFrequencies(frequencyArray, durationPerNote) {
     // Increment the startTime by the duration of the note just scheduled.
     startTime += durationPerNote;
   });
+
+  return new Promise(resolve => {
+    // Resolve the promise after all notes have played
+    setTimeout(
+      () => {
+        resolve();
+      },
+      frequencyArray.length * durationPerNote * 1000
+    ); // Convert to milliseconds
+  });
 }
 
-function playMessage(msg) {
+async function playMessage(msg) {
   // const frequencyArray = convertFromTextToHz('k');
   const converter = new AudioConverter(3500, 4100);
   const frequencyArray = converter.encode(msg);
 
   console.log(frequencyArray);
   // play([523, 659, 784, 1047], 0.3);
-  play(frequencyArray, 0.4);
+  await playFrequencies(frequencyArray, 0.4);
 }
 
 export default playMessage;

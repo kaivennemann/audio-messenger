@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MainPage } from './components';
-// import { play } from './audio-output/play.js'
+import playMessage from './audio-output/play.js';
 
 import './styles/App.css';
 import './styles/Styles.css';
@@ -27,16 +27,14 @@ export default function App() {
     },
   ]);
 
-  async function playMessage(msg) {
+  async function sendMessage(msg) {
     setMessagingState(1);
-    setTimeout(() => {
-      console.log('This message is shown after 3 seconds. tomlog');
-      setMessagingState(0);
-      let msg_id = messages.length;
-      setMessages(messages => {
-        return [...messages, { id: msg_id, content: msg, sender: username }];
-      });
-    }, 3000);
+    await playMessage(msg);
+    setMessagingState(0);
+    let msg_id = messages.length;
+    setMessages(messages => {
+      return [...messages, { id: msg_id, content: msg, sender: username }];
+    });
   }
 
   return (
@@ -45,7 +43,7 @@ export default function App() {
         username={username}
         messagingState={messagingState}
         messages={messages}
-        playSound={playMessage}
+        playSound={sendMessage}
       />
     </div>
   );
