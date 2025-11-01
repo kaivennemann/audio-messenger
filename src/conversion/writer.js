@@ -1,10 +1,12 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
 import { ALPHABET } from './constants.js';
-import { basicConstructor } from './generator/basic.js';
-import { singleConstructor } from './generator/single.js';
-import { ultrasonicConstructor } from './generator/ultrasonic.js';
-import { voiceConstructor } from './generator/voice.js';
+import {
+  basicConstructor,
+  singleConstructor,
+  ultrasonicConstructor,
+  voiceConstructor,
+} from './generator/index.js';
 
 const d = ultrasonicConstructor(ALPHABET);
 const b = basicConstructor(ALPHABET);
