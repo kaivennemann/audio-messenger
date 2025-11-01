@@ -5,14 +5,18 @@ import {
   convertFromHzToTextRobust,
   CONFIG,
 } from '../conversion/parser/robust';
+import schema from '../conversion/schema/basic.json';
 
 export default function RobustFrequencyDetector({ onMessageReceived }) {
   const [isRecording, setIsRecording] = useState(false);
   const [peakFreq, setPeakFreq] = useState(null);
   const [validFreq, setValidFreq] = useState(null);
   const [peakAmp, setPeakAmp] = useState(0);
-  const [detectedMessage, setDetectedMessage] = useState('');
-  const [detectionBuffer, setDetectionBuffer] = useState([]);
+  // const [detectedMessage, setDetectedMessage] = useState('');
+  // const [detectionBuffer, setDetectionBuffer] = useState([]);
+
+  const currentTone = useRef(null);
+  const detectedMessage = useRef('');
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -20,6 +24,13 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
   const animationRef = useRef(null);
   const detectionsRef = useRef([]);
   const startTimeRef = useRef(null);
+
+  const clearMessage = () => {
+    // setCurrentTone(null);
+    currentTone.current = null;
+    detectedMessage.current = '';
+    detectionsRef.current = [];
+  };
 
   const startRecording = async () => {
     try {
@@ -40,19 +51,12 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
       detectionsRef.current = [];
 
       setIsRecording(true);
-      setDetectedMessage('');
-      setDetectionBuffer([]);
+      clearMessage();
       detectPeakFrequency();
     } catch (err) {
       console.error('Error accessing microphone:', err);
       alert('Could not access microphone');
     }
-  };
-
-  const clearMessage = () => {
-    setDetectedMessage('');
-    setDetectionBuffer([]);
-    detectionsRef.current = [];
   };
 
   const stopRecording = () => {
@@ -63,26 +67,28 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
       audioContextRef.current.close();
     }
 
-    // Process all detections
-    if (detectionsRef.current.length > 0) {
-      const frequencies = processFrequencyDetections(detectionsRef.current);
-      const message = convertFromHzToTextRobust(frequencies);
+    clearMessage();
 
-      if (message) {
-        setDetectedMessage(message);
-      } else {
-        setDetectedMessage('[No message detected]');
-      }
+    // // Process all detections
+    // if (detectionsRef.current.length > 0) {
+    //   const frequencies = processFrequencyDetections(detectionsRef.current);
+    //   const message = convertFromHzToTextRobust(frequencies);
 
-      if (onMessageReceived && message) {
-        onMessageReceived(message);
-      }
+    //   if (message) {
+    //     setDetectedMessage(message);
+    //   } else {
+    //     setDetectedMessage('[No message detected]');
+    //   }
 
-      console.log('Processed frequencies:', frequencies);
-      console.log('Decoded message:', message);
-    } else {
-      setDetectedMessage('[No valid tones detected]');
-    }
+    //   if (onMessageReceived && message) {
+    //     onMessageReceived(message);
+    //   }
+
+    //   console.log('Processed frequencies:', frequencies);
+    //   console.log('Decoded message:', message);
+    // } else {
+    //   setDetectedMessage('[No valid tones detected]');
+    // }
 
     setIsRecording(false);
     setPeakFreq(null);
@@ -115,34 +121,80 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
         }
       }
 
-      const frequency = peakBin * binWidth;
-      const timestamp = Date.now() - startTimeRef.current;
+      function arraysMatch(arr1, arr2) {
+        return (
+          arr1.length === arr2.length &&
+          arr1.every((val, idx) => val === arr2[idx])
+        );
+      }
 
-      // Store detection with timestamp
-      detectionsRef.current.push({
-        frequency: frequency,
-        amplitude: maxAmplitude,
-        timestamp: timestamp,
-      });
+      const frequency =
+        maxAmplitude >= 100
+          ? findClosestValidFrequency(peakBin * binWidth)
+          : null;
 
-      // Find closest valid frequency
-      const closestValid = findClosestValidFrequency(frequency);
+      if (currentTone.current !== frequency && frequency !== null) {
+        // setCurrentTone(frequency);
+        if (currentTone.current !== null)
+          detectionsRef.current.push(currentTone.current);
+        currentTone.current = frequency;
+        if (detectionsRef.current.length == 2) {
+          console.log(detectionsRef.current);
+          let matched = false;
+          // CONFIGURE THE # OF THINGS FOR 1 CHAR
+          // decode the character from detectionsRef
+          for (const [char, frequencies] of Object.entries(
+            schema.frequencyMap
+          )) {
+            if (frequencies.length !== detectionsRef.current.length) {
+              console.log(
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA THE DECODE LENGTH ISNT 2'
+              );
+              break;
+            }
+            // console.log([detectionsRef.current, frequencies]);
+            if (arraysMatch(detectionsRef.current, frequencies)) {
+              matched = true;
+              console.log(char);
+              detectedMessage.current = detectedMessage.current + char;
+              // currentTone.current = null;
+              break;
+            }
+          }
+          if (matched) {
+            detectionsRef.current = [];
+          } else {
+            detectionsRef.current.splice(0, 1);
+          }
+        }
+      }
+      // const timestamp = Date.now() - startTimeRef.current;
+
+      // // Store detection with timestamp
+      // detectionsRef.current.push({
+      //   frequency: frequency,
+      //   amplitude: maxAmplitude,
+      //   timestamp: timestamp,
+      // });
+
+      // // Find closest valid frequency
+      // const closestValid = findClosestValidFrequency(frequency);
 
       // Update UI
-      setPeakFreq(frequency.toFixed(2));
-      setValidFreq(closestValid);
+      setPeakFreq(frequency ? frequency.toFixed(2) : -1);
+      setValidFreq(frequency);
       setPeakAmp(maxAmplitude);
 
-      // Update detection buffer for visualization (keep last 20)
-      if (
-        closestValid !== null &&
-        maxAmplitude >= CONFIG.MIN_AMPLITUDE_THRESHOLD
-      ) {
-        setDetectionBuffer(prev => {
-          const newBuffer = [...prev, closestValid];
-          return newBuffer.slice(-20);
-        });
-      }
+      // // Update detection buffer for visualization (keep last 20)
+      // if (
+      //   closestValid !== null &&
+      //   maxAmplitude >= CONFIG.MIN_AMPLITUDE_THRESHOLD
+      // ) {
+      //   setDetectionBuffer(prev => {
+      //     const newBuffer = [...prev, closestValid];
+      //     return newBuffer.slice(-20);
+      //   });
+      // }
 
       animationRef.current = requestAnimationFrame(detect);
     };
@@ -405,7 +457,7 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
             )}
           </svg>
         </button>
-        {detectedMessage && !isRecording && (
+        {detectedMessage.current && !isRecording && (
           <button
             onClick={clearMessage}
             className="mic-button clear"
@@ -456,7 +508,7 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
         </div>
       )}
 
-      {isRecording && detectionBuffer.length > 0 && (
+      {/* {isRecording && detectionBuffer.length > 0 && (
         <div className="buffer-display">
           <div className="buffer-label">Recent Valid Detections (last 20)</div>
           <div className="buffer-content">
@@ -467,12 +519,12 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="message-display">
         <div className="message-label">Decoded Message:</div>
         <div className="message-content">
-          {detectedMessage ||
+          {detectedMessage.current ||
             (isRecording
               ? 'Listening...'
               : 'Click microphone to start receiving')}
@@ -484,9 +536,9 @@ export default function RobustFrequencyDetector({ onMessageReceived }) {
         <span>
           {isRecording
             ? 'Recording in progress'
-            : detectedMessage
-              ? 'Decoding complete'
-              : 'Ready to receive'}
+            : detectedMessage.current
+            ? 'Decoding complete'
+            : 'Ready to receive'}
         </span>
       </div>
     </div>
