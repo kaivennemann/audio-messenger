@@ -32,16 +32,17 @@ export default function App() {
     },
   ]);
   const [currentMessage, setCurrentMessage] = useState([]);
-
-  async function sendMessage(msg) {
+  const [deliminatorReceived, setDeliminatorReceived] = useState(false);
+  const [receivedUsername, setReceivedUsername] = useState('');
+  async function sendMessage(msg, username) {
     if (messagingState !== 0) return;
 
     setMessagingState(1);
     // NOTE: Adjust the timing parameters here!
     setTimeout(async () => {
-      console.log('waited .2 seconds');
-      await playMessage(msg, 60, 20);
-      console.log('message played');
+      console.log('waited 20 ms');
+      let full_message = username + '%%' + msg;
+      await playMessage(full_message, 30, 0);
       setMessagingState(0);
       let msg_id = messages.length;
       setMessages(messages => {
@@ -57,7 +58,25 @@ export default function App() {
     console.log('Received token:', token);
     if (messagingState === 0) return;
 
-    setCurrentMessage(currentMessage => [...currentMessage, token]);
+    if (deliminatorReceived) {
+      if (token === '%') return;
+      setCurrentMessage(currentMessage => [...currentMessage, token]);
+      return;
+    }
+
+    if (token === '%') {
+      setDeliminatorReceived(true);
+      return;
+    } else if (currentMessage.length <= 9) {
+      setReceivedUsername(s => s + token);
+      return;
+    }
+    // abandon message, sender id compromised
+    console.log('abandon message');
+    setCurrentMessage([]);
+    setMessagingState(0);
+    setReceivedUsername('');
+    setDeliminatorReceived(false);
   }
   function onMessageStart() {
     if (messagingState !== 0) {
@@ -73,13 +92,15 @@ export default function App() {
     }
     console.log('Message ended');
     setMessagingState(0);
+    setDeliminatorReceived(false);
+    setReceivedUsername('');
     const messageStr = currentMessage.join('');
     setCurrentMessage([]);
     let msg_id = messages.length;
     setMessages(messages => {
       return [
         ...messages,
-        { id: msg_id, content: messageStr, sender: 'Remote' },
+        { id: msg_id, content: messageStr, sender: receivedUsername },
       ];
     });
   }
@@ -108,7 +129,7 @@ export default function App() {
               username={username}
               messagingState={messagingState}
               messages={messages}
-              playSound={sendMessage}
+              sendMessage={sendMessage}
               incomingMessage={currentMessage}
             />
           </div>

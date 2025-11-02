@@ -66,7 +66,7 @@ const MessageStack = ({ messages, loading, username, incomingMessage }) => {
       {incomingMessage.length === 0 ? (
         ''
       ) : (
-        <Message content={incomingMessage.join('')} sender={'Remote'} />
+        <Message content={incomingMessage.join('')} sender={'Incoming'} />
       )}
     </>
   );
