@@ -1,0 +1,52 @@
+/* Slightly greyed message + subtle shimmer while sending */
+.loading-shimmer {
+  position: relative;
+  display: inline-block; /* keeps sizing tied to message */
+  color: #6b6b6b; /* slightly grey text */
+  overflow: hidden; /* prevent shimmer from causing horizontal scrollbars */
+  border-radius: 12px; /* ensure the container itself is rounded */
+}
+
+/* Overlay container that matches the message box and clips the shimmer */
+.loading-shimmer .shimmer-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: inherit; /* match message bubble radius */
+  overflow: hidden; /* clip the animated pseudo-element to rounded corners */
+  /* keep this element neutral — the actual moving gradient is in ::before */
+  background: transparent;
+}
+
+/* animated gradient lives in the pseudo-element so its travel is clipped */
+.loading-shimmer .shimmer-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%; /* start off-left but inside clipped parent */
+  width: 180%; /* wide enough to create the sweep */
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0.28;
+  mix-blend-mode: lighten;
+  transform: translateX(0);
+  animation: shimmer 1.2s ease-in-out infinite alternate-reverse;
+}
+
+/* animation — small travel keeps everything inside clipped parent and avoids scrollbars */
+@keyframes shimmer {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(55%);
+  }
+}

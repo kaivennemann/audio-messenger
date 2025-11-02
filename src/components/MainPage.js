@@ -18,6 +18,7 @@ const MainPage = ({
       <MessageStack
         messages={messages}
         loading={messagingState === 1}
+        username={username}
         incomingMessage={incomingMessage}
       />
       <InputBar onSend={sendMessage} alphabet={alphabet} username={username} />

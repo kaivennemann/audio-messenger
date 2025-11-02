@@ -29,7 +29,7 @@ export default function App() {
     {
       id: 0,
       content:
-        'Welcome to NoyZChannel, the noisiest messaging channel! Type and send a message to get started.',
+        'Welcome to NoyZChannel, the noisiest messaging channel! Type a message to get started.',
       sender: 'System',
       timestamp: Date.now(),
     },
