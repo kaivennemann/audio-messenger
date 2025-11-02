@@ -85,14 +85,35 @@ export default function App() {
     });
   }
 
+  const currentMessage = [];
+
   function onToken(token) {
+    if (messagingState === 1) {
+      return;
+    }
     console.log('Received token:', token);
+    currentMessage.push(token);
   }
   function onMessageStart() {
+    if (messagingState === 1) {
+      return;
+    }
     console.log('Message started');
+    currentMessage.length = 0;
   }
   function onMessageEnd() {
+    if (messagingState === 1) {
+      return;
+    }
     console.log('Message ended');
+    const messageStr = currentMessage.join('');
+    let msg_id = messages.length;
+    setMessages(messages => {
+      return [
+        ...messages,
+        { id: msg_id, content: messageStr, sender: 'Remote' },
+      ];
+    });
   }
 
   // HACK: HACKY!!
