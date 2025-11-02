@@ -1,6 +1,12 @@
 import schema from './schema/basic.json' with { type: 'json' };
+import { cauchyEncode } from './cauchy.js';
 
-export function convertFromTextToHz(data) {
+export function convertFromTextToHz(data, useCauchy = false, redundancy = 4) {
+  // Apply Cauchy encoding if requested
+  if (useCauchy) {
+    data = cauchyEncode(data, redundancy);
+  }
+
   data = '^#!' + data + '$&*';
 
   const arredData = data.split('');
