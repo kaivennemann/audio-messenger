@@ -24,6 +24,7 @@ function initializeAudioVisualizer(audioListener) {
           minDecibels: -110,
           minFreq: 2500,
           maxFreq: 8500,
+          volume: 0,
         }
       );
       audioMotion.connectInput(
