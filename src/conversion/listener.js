@@ -144,11 +144,12 @@ export class AudioToneListener {
         if (this.current_special.join('') === START) {
           this.handleMessageStart();
           this.current_special = [];
-        } else if (this.current_special.join('') === END) {
+        } else if (token === END) {
           this.handleMessageEnd();
           this.current_special = [];
         }
       } else {
+        this.consequativeErasureCount = 0;
         this.handleSymbol(token);
       }
     } else {
@@ -185,7 +186,7 @@ export class AudioToneListener {
       this.lastSymbolTime = Date.now();
       this.symbolPosition++;
     }
-    this.consequativeErasureCount = 0;
+
     if (this.onToken) {
       this.onToken(token);
     }
