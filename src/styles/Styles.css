@@ -58,9 +58,7 @@ body {
   color: #e6f7ff;
   padding: 12px 24px;
   border-radius: 10px;
-  width: calc(55vw + 2rem);
-  max-width: 960px;
-  margin: 0 auto;
+  width: min(100vw, 800pt);
   box-shadow:
     0 8px 40px rgba(2, 132, 199, 0.08),
     inset 0 -1px 0 rgba(255, 255, 255, 0.02);
