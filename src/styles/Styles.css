@@ -176,66 +176,105 @@ body {
   }
 }
 
-/* Welcome / Launch screen */
-.welcome-screen {
-  min-height: 100vh; /* fill viewport so centering is reliable */
+/* === Layout === */
+.welcome-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 28px;
-  padding: 48px;
-  background: linear-gradient(180deg, #fbfdff 0%, #eef6ff 100%);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.welcome-title {
-  margin: 0;
-  font-size: 38px;
-  font-weight: 800;
-  color: #032a4a;
-  letter-spacing: -0.5px;
+  justify-content: center;
+  height: 100vh;
+  background: linear-gradient(to bottom, #e0f2fe, #bae6fd);
+  font-family: 'Inter', sans-serif;
   text-align: center;
 }
 
-/* Large, round, light-blue "Launch" / Start button */
-.start-button {
-  appearance: none;
-  -webkit-appearance: none;
-  border: none;
-  background: linear-gradient(180deg, #d9f2ff 0%, #9fe2ff 60%, #7fd7ff 100%);
-  color: #02263b;
-  padding: 22px 56px;
-  font-size: 24px;
+/* === Typography === */
+.welcome-title {
+  font-size: 3.5rem;
   font-weight: 800;
-  border-radius: 999px; /* very round */
+  color: #1e293b;
+  margin-bottom: 4rem;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.highlight {
+  color: #0284c7;
+  display: block;
+  margin-top: 0.45rem;
+}
+
+.welcome-subtitle {
+  margin-top: 3rem;
+  color: #475569;
+  font-style: italic;
+  font-size: 1.2rem;
+}
+
+/* === Launch Button === */
+.launch-button {
+  width: 14rem;
+  height: 14rem;
+  background-color: #38bdf8;
+  color: white;
+  font-size: 3rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 0 40px rgba(56, 189, 248, 0.6);
   cursor: pointer;
-  box-shadow:
-    0 18px 40px rgba(15, 87, 171, 0.12),
-    inset 0 -2px 0 rgba(255, 255, 255, 0.35);
   transition:
-    transform 140ms ease,
-    box-shadow 140ms ease,
-    filter 140ms ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 260px;
+    transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    background-color 180ms linear;
+  will-change: transform, box-shadow;
+  transform-origin: center;
+  animation: pulse 2.5s infinite ease-in-out;
 }
 
-.start-button:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 28px 60px rgba(15, 87, 171, 0.16);
-  filter: saturate(1.03);
+/* Hover: subtle grow + slightly darker tint and stronger glow */
+.launch-button:hover {
+  transform: translateY(-4px) scale(1.06);
+  background-color: #22c1f0; /* slightly darker / more saturated */
+  box-shadow: 0 6px 70px rgba(56, 189, 248, 0.9);
 }
 
-.start-button:active {
-  transform: translateY(-2px) scale(0.995);
-  box-shadow: 0 10px 30px rgba(15, 87, 171, 0.12);
+/* Active: immediate tactile shrink to indicate press */
+.launch-button:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 3px 30px rgba(56, 189, 248, 0.5);
+  transition-duration: 120ms;
 }
 
-.start-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 8px rgba(127, 211, 255, 0.18);
+/* Keyboard focus for accessibility */
+.launch-button:focus-visible {
+  outline: 3px solid rgba(2, 132, 199, 0.25);
+  outline-offset: 6px;
+  box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.08);
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .launch-button,
+  .launch-button:hover,
+  .launch-button:active {
+    transition: none;
+    animation: none;
+    transform: none;
+  }
+}
+
+/* === Animation === */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 40px rgba(56, 189, 248, 0.6);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 60px rgba(56, 189, 248, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 40px rgba(56, 189, 248, 0.6);
+  }
 }
