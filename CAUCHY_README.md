@@ -41,7 +41,7 @@ const frequenciesWithRedundancy = convertFromTextToHz('hello', true, 4);
 import { AudioToneListener } from './src/conversion/listener.js';
 
 // Without Cauchy
-const listener1 = new AudioToneListener();
+const listener1 = new AudioToneListener(false);
 
 // With Cauchy (detects and recovers erasures)
 const listener2 = new AudioToneListener(true, 4);
@@ -53,11 +53,23 @@ await listener2.initialize();
 listener2.onMessageStart = () => console.log('Message started');
 listener2.onToken = (char) => console.log('Received:', char);
 listener2.onMessageEnd = () => console.log('Message ended');
+
+// NEW: Called when Cauchy successfully decodes and corrects the message
+listener2.onCorrectedMessage = (correctedText) => {
+  console.log('Corrected message:', correctedText);
+  // Update your UI to show the corrected version
+};
 ```
+
+**How it works:**
+1. As characters arrive, `onToken` is called for each one (may include `?` for erasures)
+2. At message end, Cauchy decoder runs automatically
+3. If successful, `onCorrectedMessage` is called with the fully corrected text
+4. Your UI can then replace the message with the corrected version
 
 ## How Erasure Detection Works
 
-The listener tracks character timing. If no valid tone is detected within the timeout period (default 500ms), it marks that position as an erasure:
+The listener tracks character timing. If no valid tone is detected within the timeout period (default 300ms), it marks that position as an erasure:
 
 ```
 Expected: h e l l o
@@ -67,6 +79,13 @@ Received: h e _ l o  (third char missing)
 ```
 
 The Cauchy decoder then attempts to recover the missing character using the redundancy symbols.
+
+### Automatic End Detection
+
+If the end sequence (`$&*`) is missed during transmission, the listener will automatically detect this:
+- After **3 consecutive erasures** (no characters received), the message is treated as ended
+- The Cauchy decoder is triggered automatically to recover the message
+- This prevents waiting indefinitely for a lost end sequence
 
 ## Configuration
 
@@ -84,11 +103,22 @@ const encoded = cauchyEncode('hello', 6); // 'hello' + 6 parity = 11 chars
 
 ### Adjusting Erasure Timeout
 
-In `listener.js`, change the timeout value:
+In [listener.js](src/conversion/listener.js:35), change the timeout value:
 
 ```javascript
-this.ERASURE_TIMEOUT_MS = 500; // Increase if chars are slow
+this.ERASURE_TIMEOUT_MS = 300; // Increase if chars are slow
 ```
+
+### Adjusting Consecutive Erasure Threshold
+
+In [listener.js](src/conversion/listener.js:32), change how many consecutive erasures trigger auto-end:
+
+```javascript
+this.MAX_CONSECUTIVE_ERASURES = 3; // Higher = wait longer before auto-ending
+```
+
+- Lower values (2): Faster end detection, but may cut off slow transmissions
+- Higher values (4-5): More patient, but takes longer to detect missing end sequence
 
 ## Testing
 

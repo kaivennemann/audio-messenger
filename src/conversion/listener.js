@@ -19,6 +19,7 @@ export class AudioToneListener {
     this.onMessageStart = null;
     this.onMessageEnd = null;
     this.onToken = null;
+    this.onCorrectedMessage = null; // Called when Cauchy successfully decodes and corrects the message
 
     this.current_special = [];
 
@@ -28,6 +29,8 @@ export class AudioToneListener {
     this.messageBuffer = [];
     this.isReceivingMessage = false;
     this.erasureTimeout = null;
+    this.consecutiveErasures = 0;
+    this.MAX_CONSECUTIVE_ERASURES = 3; // Treat as end code if this many erasures in a row
     // Each character = 2 tones × (200ms tone + 50ms gap) = 500ms
     // Set timeout to 300ms to quickly detect missing characters
     this.ERASURE_TIMEOUT_MS = 300;
@@ -140,6 +143,11 @@ export class AudioToneListener {
     }
 
     if (token) {
+      // Reset consecutive erasures counter on successful decode
+      if (this.useCauchy && this.isReceivingMessage) {
+        this.consecutiveErasures = 0;
+      }
+
       // TODO: This is hardcoded for now. Change it later.
       if (SPECIAL_TOKENS.includes(token)) {
         this.current_special.push(token);
@@ -153,6 +161,7 @@ export class AudioToneListener {
           if (this.useCauchy) {
             this.isReceivingMessage = true;
             this.messageBuffer = [];
+            this.consecutiveErasures = 0;
           }
           this.onMessageStart();
           this.current_special = [];
@@ -190,9 +199,22 @@ export class AudioToneListener {
 
     this.erasureTimeout = setTimeout(() => {
       if (this.useCauchy && this.isReceivingMessage) {
+        // Increment consecutive erasures
+        this.consecutiveErasures++;
+        console.warn(`Erasure detected - character missing (${this.consecutiveErasures} consecutive)`);
+
+        // Check if too many consecutive erasures - treat as end of message
+        if (this.consecutiveErasures >= this.MAX_CONSECUTIVE_ERASURES) {
+          console.log('Multiple consecutive erasures detected - treating as end of message');
+          this.handleCauchyDecode();
+          if (this.onMessageEnd) {
+            this.onMessageEnd();
+          }
+          return; // Don't continue the timeout
+        }
+
         // Mark an erasure
         this.messageBuffer.push(ERASURE_MARKER);
-        console.warn('Erasure detected - character missing');
 
         // Continue waiting for next character
         this.setupErasureTimeout();
@@ -210,6 +232,7 @@ export class AudioToneListener {
     }
 
     this.isReceivingMessage = false;
+    this.consecutiveErasures = 0;
 
     const receivedMessage = this.messageBuffer.join('');
     console.log(
@@ -235,7 +258,11 @@ export class AudioToneListener {
 
     if (decoded) {
       console.log('Cauchy decoded successfully:', decoded);
-      // Optionally emit corrected message
+
+      // Emit the corrected message if callback is set
+      if (this.onCorrectedMessage) {
+        this.onCorrectedMessage(decoded);
+      }
     } else {
       console.error('Cauchy decode failed - too many erasures');
     }

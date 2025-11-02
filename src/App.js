@@ -83,10 +83,28 @@ export default function App() {
     });
   }
 
+  function onCorrectedMessage(correctedText) {
+    console.log('Updating message with corrected text:', correctedText);
+    // Update the last message with the corrected version
+    setMessages(messages => {
+      if (messages.length === 0) return messages;
+
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.sender === 'Remote') {
+        return [
+          ...messages.slice(0, -1),
+          { ...lastMessage, content: correctedText },
+        ];
+      }
+      return messages;
+    });
+  }
+
   // HACK: HACKY!!
   audioListener.onToken = onToken;
   audioListener.onMessageStart = onMessageStart;
   audioListener.onMessageEnd = onMessageEnd;
+  audioListener.onCorrectedMessage = onCorrectedMessage;
 
   return (
     <div className="app">
