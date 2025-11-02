@@ -109,6 +109,7 @@ export default function App() {
               messages={messages}
               playSound={sendMessage}
               incomingMessage={currentMessage}
+              audioListener={audioListener}
             />
           </div>
         )}
