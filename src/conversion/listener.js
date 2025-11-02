@@ -76,8 +76,9 @@ export class AudioToneListener {
       // Find closest valid frequency
       const closestValid = findClosestValidFrequency(frequency);
 
-      if (closestValid !== null) {
+      if (closestValid !== null && maxAmplitude > 10) {
         this.addDetection(closestValid);
+        console.log('Amplitude:', maxAmplitude, 'Frequency:', closestValid);
         this.checkForToken();
       }
 
