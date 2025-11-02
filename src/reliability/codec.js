@@ -1,4 +1,5 @@
 import { CauchyRS } from './cauchy.js';
+import schema from '../conversion/schema/basic.json' with { type: 'json' };
 
 /**
  * Automatic erasure-coded message codec
@@ -10,7 +11,19 @@ export class MessageCodec {
     this.redundancy = redundancy; // Number of redundant symbols
     this.n = this.k + this.redundancy; // Total symbols per block
 
-    this.codec = new CauchyRS(this.k, this.n);
+    // Use schema alphabet (excluding start/end markers)
+    this.alphabet = schema.alphabet.filter(c => c !== '^' && c !== '$');
+    this.alphabetSize = this.alphabet.length; // Should be 70
+
+    this.codec = new CauchyRS(this.k, this.n, this.alphabetSize);
+
+    // Create mappings between field elements and alphabet
+    this.fieldToChar = {};
+    this.charToField = {};
+    for (let i = 0; i < this.alphabetSize; i++) {
+      this.fieldToChar[i] = this.alphabet[i];
+      this.charToField[this.alphabet[i]] = i;
+    }
 
     // Receiving state
     this.isReceiving = false;
@@ -33,13 +46,15 @@ export class MessageCodec {
       // Pad block if needed
       const paddedBlock = this._padBlock(block);
 
-      // Encode with Cauchy RS
+      // Encode with Cauchy RS (it handles char -> field element conversion)
       const encoded = this.codec.encode(paddedBlock.split(''));
 
-      // Convert back to characters (handling field elements)
-      const encodedChars = encoded.map(fieldElement =>
-        String.fromCharCode(fieldElement + 32) // Offset to printable ASCII
-      );
+      // Convert field elements back to alphabet characters
+      const encodedChars = encoded.map(fieldElement => {
+        const idx = fieldElement % this.alphabetSize;
+        const char = this.fieldToChar[idx];
+        return char !== undefined ? char : ' ';
+      });
 
       encodedBlocks.push(encodedChars.join(''));
     }
@@ -123,17 +138,19 @@ export class MessageCodec {
 
         // Convert symbols from characters to field elements
         const fieldSymbols = blockSymbols.map(char => {
-          if (char === '\x00') return 0; // Placeholder
-          return char.charCodeAt(0) - 32;
+          if (char === '\x00') return 0; // Placeholder for erasure
+          const fieldValue = this.charToField[char];
+          return fieldValue !== undefined ? fieldValue : 0;
         });
 
         // Decode this block
         const decoded = this.codec.decode(fieldSymbols, blockErasures);
 
-        // Convert back to characters
-        const decodedChars = decoded.map(fieldElement =>
-          String.fromCharCode(fieldElement + 32)
-        );
+        // Convert back to characters using alphabet
+        const decodedChars = decoded.map(fieldElement => {
+          const char = this.fieldToChar[fieldElement % this.alphabetSize];
+          return char !== undefined ? char : ' ';
+        });
 
         decodedBlocks.push(decodedChars.join(''));
       }
@@ -173,10 +190,17 @@ export class MessageCodec {
    * Create a 2-character header encoding number of blocks and message length
    */
   _createHeader(numBlocks, messageLength) {
-    // Encode as 2 characters (limited to 72^2 = 5184 combinations)
-    const combined = numBlocks * 256 + messageLength;
-    const char1 = String.fromCharCode((combined >> 8) + 32);
-    const char2 = String.fromCharCode((combined & 0xFF) + 32);
+    // Encode as 2 characters using alphabet (70^2 = 4900 combinations)
+    // Combined value: numBlocks (up to 70) and messageLength (up to 70)
+    const maxPerField = this.alphabetSize;
+
+    if (numBlocks >= maxPerField || messageLength >= maxPerField) {
+      throw new Error(`Message too long: ${numBlocks} blocks, ${messageLength} chars (max ${maxPerField})`);
+    }
+
+    const char1 = this.fieldToChar[numBlocks] || ' ';
+    const char2 = this.fieldToChar[messageLength] || ' ';
+
     return char1 + char2;
   }
 
@@ -188,12 +212,8 @@ export class MessageCodec {
       throw new Error('Invalid header');
     }
 
-    const char1 = header.charCodeAt(0) - 32;
-    const char2 = header.charCodeAt(1) - 32;
-    const combined = (char1 << 8) | char2;
-
-    const numBlocks = Math.floor(combined / 256);
-    const messageLength = combined % 256;
+    const numBlocks = this.charToField[header[0]] || 0;
+    const messageLength = this.charToField[header[1]] || 0;
 
     return { numBlocks, messageLength };
   }
