@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MainPage } from './components';
 import { AudioToneListener } from './conversion/listener.js';
-import playMessage from './audio-output/play.js';
+import playMessage, { codec } from './audio-output/play.js';
 
 import './styles/App.css';
 import './styles/Styles.css';
@@ -93,33 +93,63 @@ export default function App() {
     }
     console.log('Received token:', token);
     currentMessage.push(token);
+    codec.addSymbol(token); // Add to codec for decoding
   }
+
+  function onErasure(position) {
+    if (messagingState === 1) {
+      return;
+    }
+    console.log('Erasure at position:', position);
+    codec.addErasure(position); // Mark erasure in codec
+  }
+
   function onMessageStart() {
     if (messagingState === 1) {
       return;
     }
     console.log('Message started');
     currentMessage.length = 0;
+    codec.startReceiving(); // Start codec receiving
   }
+
   function onMessageEnd() {
     if (messagingState === 1) {
       return;
     }
     console.log('Message ended');
-    const messageStr = currentMessage.join('');
-    let msg_id = messages.length;
-    setMessages(messages => {
-      return [
-        ...messages,
-        { id: msg_id, content: messageStr, sender: 'Remote' },
-      ];
-    });
+
+    // Try to decode with erasure correction
+    const decodedMessage = codec.finishReceiving();
+
+    if (decodedMessage !== null) {
+      console.log('Successfully decoded message:', decodedMessage);
+      let msg_id = messages.length;
+      setMessages(messages => {
+        return [
+          ...messages,
+          { id: msg_id, content: decodedMessage, sender: 'Remote' },
+        ];
+      });
+    } else {
+      // Fallback to raw message if decoding fails
+      console.warn('Decoding failed, using raw message');
+      const messageStr = currentMessage.join('');
+      let msg_id = messages.length;
+      setMessages(messages => {
+        return [
+          ...messages,
+          { id: msg_id, content: messageStr + ' [CORRUPTED]', sender: 'Remote' },
+        ];
+      });
+    }
   }
 
   // HACK: HACKY!!
   audioListener.onToken = onToken;
   audioListener.onMessageStart = onMessageStart;
   audioListener.onMessageEnd = onMessageEnd;
+  audioListener.onErasure = onErasure; // Add erasure callback
 
   return (
     <div className="app">
