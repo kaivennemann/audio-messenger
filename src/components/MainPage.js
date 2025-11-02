@@ -38,19 +38,13 @@ const MainPage = ({
   username,
   messagingState,
   messages,
-  playSound,
+  sendMessage,
   incomingMessage,
   audioListener,
 }) => {
   const [alphabet, setAlphabet] = useState(
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-+() '
   );
-
-  function sendMessage(msg) {
-    // TODO: send message somewhere
-    playSound(msg);
-  }
-  console.log(messagingState);
 
   initializeAudioVisualizer(audioListener);
 
@@ -60,9 +54,14 @@ const MainPage = ({
         <MessageStack
           messages={messages}
           loading={messagingState === 1}
+          username={username}
           incomingMessage={incomingMessage}
         />
-        <InputBar onSend={sendMessage} alphabet={alphabet} />
+        <InputBar
+          onSend={sendMessage}
+          alphabet={alphabet}
+          username={username}
+        />
       </div>
       <div id="container" className="audio-visualizer"></div>
     </div>

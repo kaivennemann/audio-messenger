@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
-const InputBar = ({ onSend, alphabet }) => {
+const InputBar = ({ onSend, alphabet, username }) => {
     const [inputValue, setInputValue] = useState('');
 
     const handleSubmit = () => {
         console.log('Message submitted:', inputValue);
-        onSend(inputValue);
+        onSend(inputValue, username);
         setInputValue('');
     };
 
