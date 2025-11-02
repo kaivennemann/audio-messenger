@@ -98,7 +98,7 @@ export default function App() {
     const messageStr = currentMessage.join('');
     setCurrentMessage([]);
     let msg_id = messages.length;
-    if (receivedUsername.length <= 9) {
+    if (1 <= receivedUsername.length && receivedUsername.length <= 9 && currentMessage.length > 0) {
       setMessages(messages => {
         return [
           ...messages,
