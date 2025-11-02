@@ -2,6 +2,11 @@ import schema from './schema/basic.json' with { type: 'json' };
 
 import { findClosestValidFrequency } from '../conversion/convert';
 
+const SPECIAL_TOKENS = ['^', '$', '#', '!', '&', '*'];
+const START = '^#!';
+const END = '$&*';
+const SPECIAL_LENGTH = 3;
+
 export class AudioToneListener {
   constructor() {
     this.initialized = false;
@@ -13,6 +18,8 @@ export class AudioToneListener {
     this.onMessageStart = null;
     this.onMessageEnd = null;
     this.onToken = null;
+
+    this.current_special = [];
   }
 
   /**
@@ -117,10 +124,21 @@ export class AudioToneListener {
 
     if (token) {
       // TODO: This is hardcoded for now. Change it later.
-      if (token === '^') {
-        this.onMessageStart();
-      } else if (token === '$') {
-        this.onMessageEnd();
+      if (SPECIAL_TOKENS.includes(token)) {
+        this.current_special.push(token);
+
+        // Keep only the last SPECIAL_LENGTH tokens
+        while (this.current_special.length > SPECIAL_LENGTH) {
+          this.current_special.shift();
+        }
+
+        if (this.current_special.join('') === START) {
+          this.onMessageStart();
+          this.current_special = [];
+        } else if (this.current_special.join('') === END) {
+          this.onMessageEnd();
+          this.current_special = [];
+        }
       } else {
         this.onToken(token);
       }
