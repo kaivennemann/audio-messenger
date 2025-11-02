@@ -5,6 +5,7 @@ import playMessage from './audio-output/play.js';
 
 import './styles/App.css';
 import './styles/Styles.css';
+import WelcomePage from './components/WelcomePage.js';
 
 // HACK: If I put this inside the App function, it seems to reinitialize
 // every time the component rerenders (which breaks things).
@@ -13,6 +14,8 @@ import './styles/Styles.css';
 const audioListener = new AudioToneListener();
 
 export default function App() {
+  const [showMainPage, setShowMainPage] = useState(false);
+
   // messaging state: {0: none, 1: transmitting, 2: receiving}
   let [messagingState, setMessagingState] = useState(0);
   const [username, setUsername] = useState('tempUser');
@@ -123,15 +126,22 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <h1 className="header-title">HzMessenger</h1>
-      </header>
-      <MainPage
-        username={username}
-        messagingState={messagingState}
-        messages={messages}
-        playSound={sendMessage}
-      />
+      <div>
+        {!showMainPage && <WelcomePage setShowMainPage={setShowMainPage} />}
+        {showMainPage && (
+          <div className="app-container">
+            <header className="header">
+              <h1 className="header-title">HzMessenger</h1>
+            </header>
+            <MainPage
+              username={username}
+              messagingState={messagingState}
+              messages={messages}
+              playSound={sendMessage}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
