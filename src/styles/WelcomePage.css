@@ -1,0 +1,102 @@
+/* === Layout === */
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: linear-gradient(to bottom, #e0f2fe, #bae6fd);
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+}
+
+/* === Typography === */
+.welcome-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 4rem;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.highlight {
+  color: #0284c7;
+  display: block;
+  margin-top: 0.45rem;
+}
+
+.welcome-subtitle {
+  margin-top: 3rem;
+  color: #475569;
+  font-style: italic;
+  font-size: 1.2rem;
+}
+
+/* === Launch Button === */
+.launch-button {
+  width: 14rem;
+  height: 14rem;
+  background-color: #38bdf8;
+  color: white;
+  font-size: 3rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 0 40px rgba(56, 189, 248, 0.6);
+  cursor: pointer;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    background-color 180ms linear;
+  will-change: transform, box-shadow;
+  transform-origin: center;
+  animation: pulse 2.5s infinite ease-in-out;
+}
+
+/* Hover: subtle grow + slightly darker tint and stronger glow */
+.launch-button:hover {
+  transform: translateY(-4px) scale(1.06);
+  background-color: #22c1f0; /* slightly darker / more saturated */
+  box-shadow: 0 6px 70px rgba(56, 189, 248, 0.9);
+}
+
+/* Active: immediate tactile shrink to indicate press */
+.launch-button:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 3px 30px rgba(56, 189, 248, 0.5);
+  transition-duration: 120ms;
+}
+
+/* Keyboard focus for accessibility */
+.launch-button:focus-visible {
+  outline: 3px solid rgba(2, 132, 199, 0.25);
+  outline-offset: 6px;
+  box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.08);
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .launch-button,
+  .launch-button:hover,
+  .launch-button:active {
+    transition: none;
+    animation: none;
+    transform: none;
+  }
+}
+
+/* === Animation === */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 40px rgba(56, 189, 248, 0.6);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 60px rgba(56, 189, 248, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 40px rgba(56, 189, 248, 0.6);
+  }
+}
