@@ -75,14 +75,14 @@
 }
 
 /* Hover: subtle grow + slightly darker tint and stronger glow */
-.launch-button:hover {
+.launch-button:not([disabled]):hover {
   transform: translateY(-4px) scale(1.06);
   background-color: #22c1f0; /* slightly darker / more saturated */
   box-shadow: 0 6px 70px rgba(56, 189, 248, 0.9);
 }
 
 /* Active: immediate tactile shrink to indicate press */
-.launch-button:active {
+.launch-button:not([disabled]):active {
   transform: translateY(0) scale(0.96);
   box-shadow: 0 3px 30px rgba(56, 189, 248, 0.5);
   transition-duration: 120ms;
@@ -209,16 +209,13 @@
   will-change: transform, box-shadow;
 }
 
-.join-button:hover:not([disabled]) {
-  /* much smaller lift and minimal scale */
+.join-button:not([disabled]):hover {
   transform: translateY(-3px) scale(1.01);
-  /* reduced hover glow */
   box-shadow: 0 12px 36px rgba(14, 165, 233, 0.14);
   background: linear-gradient(90deg, #05a7c0, #0896c6);
 }
 
-.join-button:active:not([disabled]) {
-  /* subtle press without big shrink */
+.join-button:not([disabled]):active {
   transform: translateY(0) scale(0.995);
   box-shadow: 0 6px 18px rgba(2, 132, 199, 0.1);
   transition-duration: 90ms;
