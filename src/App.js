@@ -129,8 +129,13 @@ export default function App() {
               username={username}
               messagingState={messagingState}
               messages={messages}
+              playSound={sendMessage}
+              audioListener={audioListener}
               sendMessage={sendMessage}
-              incomingMessage={{content: currentMessage, sender: receivedUsername}}
+              incomingMessage={{
+                content: currentMessage,
+                sender: receivedUsername,
+              }}
             />
           </div>
         )}

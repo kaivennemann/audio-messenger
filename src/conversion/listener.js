@@ -14,6 +14,7 @@ export class AudioToneListener {
     this.source = null;
     this.analyser = null;
     this.detections = [];
+    this.mediaStream = null;
 
     this.onMessageStart = null;
     this.onMessageEnd = null;
@@ -35,6 +36,7 @@ export class AudioToneListener {
     console.log(this.initialized);
     this.audioContext = new AudioContext();
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.mediaStream = stream;
 
     this.source = this.audioContext.createMediaStreamSource(stream);
     this.analyser = this.audioContext.createAnalyser();
