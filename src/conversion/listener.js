@@ -26,7 +26,7 @@ export class AudioToneListener {
     this.lastSymbolTime = null;
     this.symbolTimeout = 400; // Expected time per symbol (ms): 200ms tone + 50ms gap + buffer
     this.erasureCheckInterval = null;
-    this.consequativeErasureCount = 0;
+    this.consecutiveErasureCount = 0;
 
     this.current_special = [];
   }
@@ -149,13 +149,13 @@ export class AudioToneListener {
           this.current_special = [];
         }
       } else {
-        this.consequativeErasureCount = 0;
+        this.consecutiveErasureCount = 0;
         this.handleSymbol(token);
       }
     } else {
       this.detections.shift();
     }
-    if (this.consequativeErasureCount > 5) {
+    if (this.consecutiveErasureCount > 5) {
       this.handleMessageEnd();
       this.current_special = [];
     }
@@ -208,7 +208,7 @@ export class AudioToneListener {
         this.symbolPosition++;
         this.lastSymbolTime = Date.now(); // Reset to avoid multiple erasures for same position
 
-        this.consequativeErasureCount++;
+        this.consecutiveErasureCount++;
         if (this.onErasure) {
           this.onErasure(erasurePosition);
         }
