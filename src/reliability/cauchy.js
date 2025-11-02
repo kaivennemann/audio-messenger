@@ -38,10 +38,13 @@ export class CauchyRS {
       );
     }
 
-    // Convert characters to field elements
-    const data = dataSymbols.map(
-      char => char.charCodeAt(0) % this.alphabetSize
-    );
+    // Convert to field elements if they're characters
+    const data = dataSymbols.map(symbol => {
+      if (typeof symbol === 'string') {
+        return symbol.charCodeAt(0) % this.alphabetSize;
+      }
+      return symbol % this.alphabetSize;
+    });
 
     // Calculate parity symbols
     const parity = [];
@@ -114,12 +117,14 @@ export class CauchyRS {
 
     // Gaussian elimination
     for (let i = 0; i < n; i++) {
-      // Find pivot
+      // Find pivot - if current row has zero, look for non-zero below
       let pivotRow = i;
-      for (let j = i + 1; j < n; j++) {
-        if (augmented[j][i] !== 0) {
-          pivotRow = j;
-          break;
+      if (augmented[i][i] === 0) {
+        for (let j = i + 1; j < n; j++) {
+          if (augmented[j][i] !== 0) {
+            pivotRow = j;
+            break;
+          }
         }
       }
 
@@ -127,8 +132,10 @@ export class CauchyRS {
         throw new Error('Matrix is singular');
       }
 
-      // Swap rows
-      [augmented[i], augmented[pivotRow]] = [augmented[pivotRow], augmented[i]];
+      // Swap rows if needed
+      if (pivotRow !== i) {
+        [augmented[i], augmented[pivotRow]] = [augmented[pivotRow], augmented[i]];
+      }
 
       // Scale pivot row
       const pivot = augmented[i][i];

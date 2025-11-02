@@ -39,15 +39,32 @@ export class MessageCodec {
    * @returns {string} - Encoded message with redundancy symbols
    */
   encode(message) {
+    console.log(`Encoding message: "${message}" (${message.length} chars)`);
     const blocks = this._splitIntoBlocks(message);
+    console.log(`Split into ${blocks.length} blocks:`, blocks);
     const encodedBlocks = [];
 
-    for (const block of blocks) {
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
       // Pad block if needed
       const paddedBlock = this._padBlock(block);
+      console.log(`Block ${i}: "${block}" → padded: "${paddedBlock}"`);
 
-      // Encode with Cauchy RS (it handles char -> field element conversion)
-      const encoded = this.codec.encode(paddedBlock.split(''));
+      // Convert characters to field elements using our alphabet mapping
+      const fieldElements = paddedBlock.split('').map(char => {
+        const fieldValue = this.charToField[char];
+        if (fieldValue !== undefined) {
+          return fieldValue;
+        }
+        console.warn(`Unknown character '${char}', mapping to 0`);
+        return 0;
+      });
+
+      console.log(`Block ${i} field elements (input):`, fieldElements);
+
+      // Encode with Cauchy RS
+      const encoded = this.codec.encode(fieldElements);
+      console.log(`Block ${i} encoded field elements (output):`, encoded);
 
       // Convert field elements back to alphabet characters
       const encodedChars = encoded.map(fieldElement => {
@@ -56,12 +73,18 @@ export class MessageCodec {
         return char !== undefined ? char : ' ';
       });
 
-      encodedBlocks.push(encodedChars.join(''));
+      const encodedStr = encodedChars.join('');
+      console.log(`Block ${i} encoded string: "${encodedStr}" (${encodedStr.length} chars)`);
+      encodedBlocks.push(encodedStr);
     }
 
     // Add header with number of blocks and original message length
     const header = this._createHeader(blocks.length, message.length);
-    return header + encodedBlocks.join('');
+    console.log(`Header: "${header}" (numBlocks=${blocks.length}, messageLength=${message.length})`);
+
+    const result = header + encodedBlocks.join('');
+    console.log(`Final encoded message: "${result}" (${result.length} chars)`);
+    return result;
   }
 
   /**
@@ -73,6 +96,7 @@ export class MessageCodec {
     this.erasurePositions = [];
     this.currentBlock = 0;
     this.expectedBlocks = 0;
+    this.expectedSymbols = null; // Will be set after reading header
   }
 
   /**
@@ -83,6 +107,18 @@ export class MessageCodec {
     if (!this.isReceiving) return;
 
     this.receivedSymbols.push(symbol);
+
+    // After receiving header (2 symbols), calculate expected total
+    if (this.expectedSymbols === null && this.receivedSymbols.length === 2) {
+      try {
+        const header = this.receivedSymbols.join('');
+        const { numBlocks } = this._parseHeader(header);
+        this.expectedSymbols = 2 + (numBlocks * this.n);
+        console.log(`Header received, expecting ${this.expectedSymbols} total symbols`);
+      } catch (e) {
+        console.warn('Failed to parse header:', e);
+      }
+    }
   }
 
   /**
@@ -107,17 +143,36 @@ export class MessageCodec {
     this.isReceiving = false;
 
     if (this.receivedSymbols.length === 0) {
+      console.warn('No symbols received');
       return null;
     }
 
     try {
+      console.log('Received symbols:', this.receivedSymbols.join(''));
+      console.log('Erasure positions:', this.erasurePositions);
+
       // Parse header
       const headerLength = 2;
       const header = this.receivedSymbols.slice(0, headerLength).join('');
       const { numBlocks, messageLength } = this._parseHeader(header);
 
+      console.log(`Decoded header: ${numBlocks} blocks, ${messageLength} chars`);
+
+      const expectedTotal = headerLength + (numBlocks * this.n);
+
+      // If we're missing symbols at the end, mark them as erasures
+      if (this.receivedSymbols.length < expectedTotal) {
+        console.warn(`Missing ${expectedTotal - this.receivedSymbols.length} symbols at end`);
+        for (let i = this.receivedSymbols.length; i < expectedTotal; i++) {
+          this.receivedSymbols.push('\x00');
+          this.erasurePositions.push(i);
+        }
+      }
+
       // Extract encoded data (skip header)
       const encodedData = this.receivedSymbols.slice(headerLength);
+
+      console.log(`Encoded data length: ${encodedData.length}, expected: ${numBlocks * this.n}`);
 
       // Adjust erasure positions (account for header)
       const adjustedErasures = this.erasurePositions
@@ -131,10 +186,14 @@ export class MessageCodec {
         const blockEnd = blockStart + this.n;
         const blockSymbols = encodedData.slice(blockStart, blockEnd);
 
+        console.log(`Block ${i}: received ${blockSymbols.length} symbols, expected ${this.n}`);
+
         // Find erasures in this block
         const blockErasures = adjustedErasures
           .filter(pos => pos >= blockStart && pos < blockEnd)
           .map(pos => pos - blockStart);
+
+        console.log(`Block ${i} erasures:`, blockErasures);
 
         // Convert symbols from characters to field elements
         const fieldSymbols = blockSymbols.map(char => {
@@ -143,8 +202,12 @@ export class MessageCodec {
           return fieldValue !== undefined ? fieldValue : 0;
         });
 
+        console.log(`Block ${i} field symbols:`, fieldSymbols);
+
         // Decode this block
         const decoded = this.codec.decode(fieldSymbols, blockErasures);
+
+        console.log(`Block ${i} decoded:`, decoded);
 
         // Convert back to characters using alphabet
         const decodedChars = decoded.map(fieldElement => {
@@ -157,10 +220,14 @@ export class MessageCodec {
 
       // Join blocks and trim to original message length
       const fullMessage = decodedBlocks.join('');
-      return fullMessage.substring(0, messageLength);
+      console.log('Full decoded message:', fullMessage);
+      const result = fullMessage.substring(0, messageLength);
+      console.log('Trimmed to original length:', result);
+      return result;
 
     } catch (error) {
       console.error('Decoding failed:', error);
+      console.error('Stack:', error.stack);
       return null;
     }
   }
