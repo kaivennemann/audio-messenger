@@ -2,6 +2,13 @@
   text-align: center;
 }
 
+/* ensure the app root keeps the same blue background during page transitions
+   to avoid a white flash when WelcomePage unmounts */
+.app {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #071425 0%, #071a2b 100%);
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;
