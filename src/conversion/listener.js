@@ -21,6 +21,8 @@ export class AudioToneListener {
     this.onToken = null;
 
     this.current_special = [];
+    this.timeout = null;
+    this.emptyTime = 1000; // ms
   }
 
   /**
@@ -138,14 +140,30 @@ export class AudioToneListener {
           this.onMessageStart();
           this.current_special = [];
         } else if (this.current_special.join('') === END) {
-          this.onMessageEnd();
-          this.current_special = [];
+          this.endMessage();
         }
       } else {
         this.onToken(token);
+        this.refreshTimeout();
       }
     } else {
       this.detections.shift();
     }
+  }
+
+  endMessage() {
+    this.onMessageEnd();
+    this.current_special = [];
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+  }
+
+  refreshTimeout() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = setTimeout(this.onMessageEnd, this.emptyTime);
   }
 }
