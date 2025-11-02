@@ -64,46 +64,45 @@ export class AudioTonePlayer {
   }
 
   /**
-   * Play a sequence of frequencies
-   * @param {Array<number>} frequencies - Array of frequencies to play
-   * @param {Function} onProgress - Callback for progress updates (index, total)
-   * @param {Function} onComplete - Callback when complete
-   */
-  async playSequence(frequencies, onProgress = null, onComplete = null) {
+ * Play a sequence of frequencies
+ * @param {Array<number>} frequencies - Array of frequencies to play
+ * @param {Function} onProgress - Callback for progress updates (index, total)
+ * @returns {Promise<void>} - Resolves when playback is complete
+ */
+  async playSequence(frequencies, onProgress = null) {
     if (!this.audioContext) {
       await this.initialize();
     }
 
-    this.isPlaying = true;
-    let currentTime = this.audioContext.currentTime + 0.1; // Small delay to start
+    return new Promise((resolve) => {
+      this.isPlaying = true;
+      let currentTime = this.audioContext.currentTime + 0.1; // Small delay to start
+      const totalDuration =
+        frequencies.length * (this.toneDuration + this.toneGap);
 
-    const totalDuration =
-      frequencies.length * (this.toneDuration + this.toneGap);
+      frequencies.forEach((freq, index) => {
+        currentTime = this.playTone(freq, this.toneDuration, currentTime);
+        currentTime += this.toneGap / 1000; // Add gap between tones
 
-    frequencies.forEach((freq, index) => {
-      currentTime = this.playTone(freq, this.toneDuration, currentTime);
-      currentTime += this.toneGap / 1000; // Add gap between tones
+        // Schedule progress callback
+        if (onProgress) {
+          setTimeout(
+            () => {
+              if (this.isPlaying) {
+                onProgress(index + 1, frequencies.length);
+              }
+            },
+            (index + 1) * (this.toneDuration + this.toneGap)
+          );
+        }
+      });
 
-      // Schedule progress callback
-      if (onProgress) {
-        setTimeout(
-          () => {
-            if (this.isPlaying) {
-              onProgress(index + 1, frequencies.length);
-            }
-          },
-          (index + 1) * (this.toneDuration + this.toneGap)
-        );
-      }
-    });
-
-    // Schedule completion callback
-    if (onComplete) {
+      // Schedule completion
       setTimeout(() => {
         this.isPlaying = false;
-        onComplete();
-      }, totalDuration);
-    }
+        resolve(); // Resolve the promise when complete
+      }, totalDuration + 200);
+    });
   }
 
   /**

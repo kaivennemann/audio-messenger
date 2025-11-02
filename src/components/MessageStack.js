@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 
 import { Message, LoadingMessage } from './';
 
-const MessageStack = ({ messages, loading }) => {
+const MessageStack = ({ messages, loading, incomingMessage }) => {
   const scrollableRef = useRef(null);
 
   // Scroll to bottom whenever messages change
@@ -47,20 +47,25 @@ const MessageStack = ({ messages, loading }) => {
   }
 
   return (
-    <div className="message-stack" ref={scrollableRef}>
-      {messages.length === 0 ? (
-        <div className="empty-state">No messages yet</div>
-      ) : (
-        messages.map(message => (
-          <Message
-            key={message.id}
-            content={message.content}
-            sender={message.sender}
-          />
-        ))
-      )}
-      {loading ? <LoadingMessage /> : ''}
-    </div>
+    <>
+
+      <div className="message-stack" ref={scrollableRef}>
+        {messages.length === 0 ? (
+          <div className="empty-state">No messages yet</div>
+        ) : (
+          messages.map(message => (
+            <Message
+              key={message.id}
+              content={message.content}
+              sender={message.sender}
+            />
+          ))
+        )}
+
+        {loading ? <LoadingMessage /> : ''}
+      </div>
+      {incomingMessage.length === 0 ? '' : <Message content={incomingMessage.join('')} sender={'Remote'} />}
+    </>
   );
 };
 

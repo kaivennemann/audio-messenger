@@ -28,8 +28,9 @@ async function playMessage(
     volume: volume,
   });
   await player.initialize();
-
+  console.log("awaiting playSequence...")
   await player.playSequence(frequencies);
+  console.log("played sequence.")
 }
 
 export default playMessage;
