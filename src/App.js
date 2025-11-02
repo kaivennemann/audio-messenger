@@ -7,6 +7,8 @@ import './styles/App.css';
 import './styles/Styles.css';
 import WelcomePage from './components/WelcomePage.js';
 
+export const CAUCHY = false;
+
 export default function App() {
   const [showMainPage, setShowMainPage] = useState(false);
 
@@ -14,7 +16,7 @@ export default function App() {
   const audioListenerRef = useRef(null);
 
   if (audioListenerRef.current === null) {
-    audioListenerRef.current = new AudioToneListener();
+    audioListenerRef.current = new AudioToneListener(CAUCHY);
   }
 
   const audioListener = audioListenerRef.current;

@@ -3,13 +3,13 @@ import schema from './schema/basic.json' with { type: 'json' };
 import { findClosestValidFrequency } from '../conversion/convert';
 import { cauchyDecode, ERASURE_MARKER } from './cauchy.js';
 
-const SPECIAL_TOKENS = ['^', '$', '#', '!', '&', '*'];
-const START = '^#!';
-const END = '$&*';
+const SPECIAL_TOKENS = ['^', '$'];
+const START = '^';
+const END = '$';
 const SPECIAL_LENGTH = 3;
 
 export class AudioToneListener {
-  constructor(useCauchy = true, redundancy = 4) {
+  constructor(useCauchy = false, redundancy = 4) {
     this.initialized = false;
     this.audioContext = null;
     this.source = null;
@@ -157,7 +157,7 @@ export class AudioToneListener {
           this.current_special.shift();
         }
 
-        if (this.current_special.join('') === START) {
+        if (token === START) {
           if (this.useCauchy) {
             this.isReceivingMessage = true;
             this.messageBuffer = [];
@@ -165,7 +165,7 @@ export class AudioToneListener {
           }
           this.onMessageStart();
           this.current_special = [];
-        } else if (this.current_special.join('') === END) {
+        } else if (token === END) {
           this.onMessageEnd();
           if (this.useCauchy && this.isReceivingMessage) {
             this.handleCauchyDecode();

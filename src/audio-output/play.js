@@ -1,13 +1,13 @@
 import { convertFromTextToHz } from '../conversion/convert.js';
 import { AudioTonePlayer } from '../conversion/player';
-
+import { CAUCHY } from './../App.js';
 async function playMessage(
   message,
   toneDuration = 200,
   toneGap = 50,
   volume = 0.3
 ) {
-  const frequencies = convertFromTextToHz(message);
+  const frequencies = convertFromTextToHz(message, CAUCHY);
   console.log('Frequencies to play:', frequencies);
 
   const player = new AudioTonePlayer({
@@ -16,9 +16,9 @@ async function playMessage(
     volume: volume,
   });
   await player.initialize();
-  console.log("awaiting playSequence...")
+  console.log('awaiting playSequence...');
   await player.playSequence(frequencies);
-  console.log("played sequence.")
+  console.log('played sequence.');
 }
 
 export default playMessage;
