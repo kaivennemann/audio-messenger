@@ -62,10 +62,13 @@ listener2.onCorrectedMessage = (correctedText) => {
 ```
 
 **How it works:**
-1. As characters arrive, `onToken` is called for each one (may include `?` for erasures)
-2. At message end, Cauchy decoder runs automatically
-3. If successful, `onCorrectedMessage` is called with the fully corrected text
-4. Your UI can then replace the message with the corrected version
+1. Characters arrive and are shown via `onToken` in real-time (may include errors/erasures)
+2. Characters are also buffered internally for Cauchy decoding
+3. At message end, Cauchy decoder runs automatically
+4. If successful, `onCorrectedMessage` is called with the fully corrected text
+5. Your UI updates the message, replacing any errors with the corrected version
+
+**User Experience**: Users see the message arriving character-by-character (with any transmission errors), then it instantly corrects itself once fully received.
 
 ## How Erasure Detection Works
 
@@ -130,6 +133,7 @@ node test-cauchy.js
 
 ## Example Output
 
+### Test Suite
 ```
 Original message: "hello"
 Redundancy: 4 symbols
@@ -141,6 +145,25 @@ Length: 5 -> 9
 Received: "he_lojplp"  (char at position 2 is missing)
 Decoded: "hello"       (successfully recovered!)
 Match: true
+```
+
+### Live Message Flow
+With Cauchy enabled:
+```
+[Message transmission starts]
+User sees (in real-time): "h" → "he" → "hel" → "hell" → "hello" → "hello " → "hello w" → "hello wo"
+[Character missing - 300ms gap]
+User sees: "hello wo" (pause - no new character)
+[Next characters arrive]: "hello wo" → "hello wol" → "hello wold"
+[Message ends - Cauchy decoder runs]
+✓ Message updates to: "hello world"  (missing 'r' recovered instantly!)
+```
+
+Without Cauchy, missing characters stay missing:
+```
+User sees (in real-time): "h" → "he" → "hel" → ... → "hello wold"
+[Message ends]
+Final message: "hello wold"  (missing 'r' - not recoverable)
 ```
 
 ## Technical Details

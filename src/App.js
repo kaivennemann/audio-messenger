@@ -29,6 +29,7 @@ export default function App() {
       content:
         'Welcome to NoyZChannel, the noisiest messaging channel! Type and send a message to get started.',
       sender: 'System',
+      timestamp: Date.now(),
     },
   ]);
   const [currentMessage, setCurrentMessage] = useState([]);
@@ -44,7 +45,10 @@ export default function App() {
       setMessagingState(0);
       let msg_id = messages.length;
       setMessages(messages => {
-        return [...messages, { id: msg_id, content: msg, sender: username }];
+        return [
+          ...messages,
+          { id: msg_id, content: msg, sender: username, timestamp: Date.now() },
+        ];
       });
     }, 20);
   }
@@ -78,23 +82,33 @@ export default function App() {
     setMessages(messages => {
       return [
         ...messages,
-        { id: msg_id, content: messageStr, sender: 'Remote' },
+        {
+          id: msg_id,
+          content: messageStr,
+          sender: 'Remote',
+          timestamp: Date.now(),
+        },
       ];
     });
   }
 
   function onCorrectedMessage(correctedText) {
     console.log('Updating message with corrected text:', correctedText);
-    // Update the last message with the corrected version
+    // Update the last message with the corrected version from Cauchy decoder
     setMessages(messages => {
       if (messages.length === 0) return messages;
 
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.sender === 'Remote') {
-        return [
-          ...messages.slice(0, -1),
-          { ...lastMessage, content: correctedText },
-        ];
+        // Create a new array with the updated message
+        const updatedMessages = messages.slice(0, -1);
+        updatedMessages.push({
+          id: lastMessage.id,
+          content: correctedText,
+          sender: 'Remote',
+          timestamp: Date.now(), // Update timestamp to force re-render
+        });
+        return updatedMessages;
       }
       return messages;
     });

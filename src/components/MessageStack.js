@@ -55,7 +55,7 @@ const MessageStack = ({ messages, loading, incomingMessage }) => {
         ) : (
           messages.map(message => (
             <Message
-              key={message.id}
+              key={`${message.id}-${message.timestamp || 0}`}
               content={message.content}
               sender={message.sender}
             />

@@ -32,8 +32,8 @@ export class AudioToneListener {
     this.consecutiveErasures = 0;
     this.MAX_CONSECUTIVE_ERASURES = 3; // Treat as end code if this many erasures in a row
     // Each character = 2 tones × (200ms tone + 50ms gap) = 500ms
-    // Set timeout to 300ms to quickly detect missing characters
-    this.ERASURE_TIMEOUT_MS = 300;
+    // Set timeout to 500ms to quickly detect missing characters
+    this.ERASURE_TIMEOUT_MS = 500;
   }
 
   /**
@@ -166,10 +166,10 @@ export class AudioToneListener {
           this.onMessageStart();
           this.current_special = [];
         } else if (this.current_special.join('') === END) {
+          this.onMessageEnd();
           if (this.useCauchy && this.isReceivingMessage) {
             this.handleCauchyDecode();
           }
-          this.onMessageEnd();
           this.current_special = [];
         }
       } else {
@@ -177,6 +177,7 @@ export class AudioToneListener {
         if (this.useCauchy && this.isReceivingMessage) {
           this.messageBuffer.push(token);
         }
+        // Always call onToken to show incoming characters
         this.onToken(token);
       }
 
@@ -201,11 +202,15 @@ export class AudioToneListener {
       if (this.useCauchy && this.isReceivingMessage) {
         // Increment consecutive erasures
         this.consecutiveErasures++;
-        console.warn(`Erasure detected - character missing (${this.consecutiveErasures} consecutive)`);
+        console.warn(
+          `Erasure detected - character missing (${this.consecutiveErasures} consecutive)`
+        );
 
         // Check if too many consecutive erasures - treat as end of message
         if (this.consecutiveErasures >= this.MAX_CONSECUTIVE_ERASURES) {
-          console.log('Multiple consecutive erasures detected - treating as end of message');
+          console.log(
+            'Multiple consecutive erasures detected - treating as end of message'
+          );
           this.handleCauchyDecode();
           if (this.onMessageEnd) {
             this.onMessageEnd();
