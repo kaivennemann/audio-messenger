@@ -7,7 +7,7 @@ import './styles/App.css';
 import './styles/Styles.css';
 import WelcomePage from './components/WelcomePage.js';
 
-export const CAUCHY = true;
+export const CAUCHY = false;
 
 export default function App() {
   const [showMainPage, setShowMainPage] = useState(false);
@@ -174,7 +174,10 @@ export default function App() {
               messagingState={messagingState}
               messages={messages}
               sendMessage={sendMessage}
-              incomingMessage={{content: currentMessage, sender: receivedUsername}}
+              incomingMessage={{
+                content: currentMessage,
+                sender: receivedUsername,
+              }}
             />
           </div>
         )}
