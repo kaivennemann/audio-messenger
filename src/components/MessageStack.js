@@ -63,10 +63,10 @@ const MessageStack = ({ messages, loading, username, incomingMessage }) => {
 
         {loading ? <LoadingMessage /> : ''}
       </div>
-      {incomingMessage.length === 0 ? (
+      {incomingMessage.content.length === 0 ? (
         ''
       ) : (
-        <Message content={incomingMessage.join('')} sender={'Incoming'} />
+        <Message content={incomingMessage.content.join('')} sender={incomingMessage.sender} />
       )}
     </>
   );
