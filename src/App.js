@@ -7,6 +7,8 @@ import './styles/App.css';
 import './styles/Styles.css';
 import WelcomePage from './components/WelcomePage.js';
 
+export const audioListener = new AudioToneListener();
+
 export default function App() {
   // Initialize once and persist across renders
   const audioListenerRef = useRef(null);
