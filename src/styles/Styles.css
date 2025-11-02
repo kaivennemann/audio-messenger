@@ -98,9 +98,13 @@ body {
 }
 
 .sender {
+  white-space: nowrap;
   font-weight: 600;
   color: #7bd1ff; /* neon cyan */
   font-size: 14px;
+  /* How to vertically align at top of message header? */
+  margin-top: 7px;
+  align-self: flex-start;
 }
 
 .timestamp {

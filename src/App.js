@@ -11,7 +11,7 @@ import WelcomePage from './components/WelcomePage.js';
 // every time the component rerenders (which breaks things).
 // But that isn't supposed to happen, right?
 // @Tom/Kai?
-export const audioListener = new AudioToneListener();
+const audioListener = new AudioToneListener();
 
 export default function App() {
   const [showMainPage, setShowMainPage] = useState(false);
@@ -22,48 +22,9 @@ export default function App() {
   const [messages, setMessages] = useState([
     {
       id: 0,
-      content: 'Hello! This is the first message.',
-      sender: 'Alice',
-    },
-    {
-      id: 1,
-      content: 'This is a sample message stack component.',
-      sender: 'Bob',
-    },
-    {
-      id: 2,
-      content: 'Each message is rendered using the Message component.',
-      sender: 'Alice',
-    },
-    {
-      id: 3,
-      content: 'Hello! This is the first message.',
-      sender: 'Alice',
-    },
-    {
-      id: 4,
-      content: 'This is a sample message stack component.',
-      sender: 'Bob',
-    },
-    {
-      id: 5,
-      content: 'Each message is rendered using the Message component.',
-      sender: 'Alice',
-    },
-    {
-      id: 6,
-      content: 'Hello! This is the first message.',
-      sender: 'Alice',
-    },
-    {
-      id: 7,
-      content: 'This is a sample message stack component.',
-      sender: 'Bob',
-    },
-    {
-      id: 8,
-      content: 'Each message is rendered using the Message component.',
-      sender: 'Alice',
+      content:
+        'Welcome to NoyZChannel, the noisiest messaging channel! Type and send a message to get started.',
+      sender: 'System',
     },
   ]);
 
@@ -131,6 +92,7 @@ export default function App() {
           <WelcomePage
             setShowMainPage={setShowMainPage}
             setUsername={setUsername}
+            audioListener={audioListener}
           />
         )}
         {showMainPage && (

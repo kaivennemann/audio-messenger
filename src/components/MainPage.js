@@ -20,7 +20,6 @@ const MainPage = ({
   return (
     <div className="main-page">
       <MessageStack messages={messages} loading={messagingState !== 0} />
-
       <InputBar onSend={sendMessage} alphabet={alphabet} />
     </div>
   );
