@@ -144,7 +144,7 @@ export class AudioToneListener {
 
     if (token) {
       // Reset consecutive erasures counter on successful decode
-      if (this.useCauchy && this.isReceivingMessage) {
+      if (this.isReceivingMessage) {
         this.consecutiveErasures = 0;
       }
 
@@ -158,11 +158,9 @@ export class AudioToneListener {
         }
 
         if (token === START) {
-          if (this.useCauchy) {
-            this.isReceivingMessage = true;
-            this.messageBuffer = [];
-            this.consecutiveErasures = 0;
-          }
+          this.isReceivingMessage = true;
+          this.messageBuffer = [];
+          this.consecutiveErasures = 0;
           this.onMessageStart();
           this.current_special = [];
         } else if (token === END) {
@@ -182,7 +180,7 @@ export class AudioToneListener {
       }
 
       // Set up erasure timeout for next token
-      if (this.useCauchy && this.isReceivingMessage) {
+      if (this.isReceivingMessage) {
         this.setupErasureTimeout();
       }
     } else {
@@ -199,7 +197,7 @@ export class AudioToneListener {
     }
 
     this.erasureTimeout = setTimeout(() => {
-      if (this.useCauchy && this.isReceivingMessage) {
+      if (this.isReceivingMessage) {
         // Increment consecutive erasures
         this.consecutiveErasures++;
         console.warn(
@@ -211,15 +209,20 @@ export class AudioToneListener {
           console.log(
             'Multiple consecutive erasures detected - treating as end of message'
           );
-          this.handleCauchyDecode();
           if (this.onMessageEnd) {
             this.onMessageEnd();
           }
+          if (this.useCauchy) {
+            this.handleCauchyDecode();
+          }
+
           return; // Don't continue the timeout
         }
 
         // Mark an erasure
-        this.messageBuffer.push(ERASURE_MARKER);
+        if (this.useCauchy) {
+          this.messageBuffer.push(ERASURE_MARKER);
+        }
 
         // Continue waiting for next character
         this.setupErasureTimeout();
