@@ -100,3 +100,97 @@
     box-shadow: 0 0 40px rgba(56, 189, 248, 0.6);
   }
 }
+
+/* name input */
+.name-input {
+  width: 60%;
+  max-width: 420px;
+  min-width: 220px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(2, 132, 199, 0.15);
+  background: white;
+  color: #0f172a; /* darker grey for actual input text */
+  font-size: 1rem;
+  font-style: normal; /* ensure entered text is not italic */
+  text-align: center;
+  outline: none;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.06);
+  transition:
+    box-shadow 180ms,
+    border-color 180ms,
+    transform 160ms;
+}
+
+/* placeholder styling: lighter grey + italic */
+.name-input::placeholder {
+  color: #9aa6b3; /* light grey for placeholder */
+  font-style: italic;
+  opacity: 1; /* ensure consistent cross-browser appearance */
+}
+
+/* vendor-prefixed placeholders for wider browser support */
+.name-input:-ms-input-placeholder {
+  color: #9aa6b3;
+  font-style: italic;
+}
+.name-input::-ms-input-placeholder {
+  color: #9aa6b3;
+  font-style: italic;
+}
+.name-input::-webkit-input-placeholder {
+  color: #9aa6b3;
+  font-style: italic;
+}
+.name-input::-moz-placeholder {
+  color: #9aa6b3;
+  font-style: italic;
+  opacity: 1;
+}
+
+.name-input:focus {
+  border-color: rgba(2, 132, 199, 0.6);
+  box-shadow: 0 10px 30px rgba(2, 132, 199, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Join button (smaller, rectangular variant) */
+.join-button {
+  margin-top: 1.25rem;
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(90deg, #06b6d4, #0ea5e9);
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 40px rgba(14, 165, 233, 0.25);
+  transition:
+    transform 200ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    box-shadow 200ms,
+    background-color 200ms;
+  will-change: transform, box-shadow;
+}
+
+.join-button:hover:not([disabled]) {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 18px 60px rgba(14, 165, 233, 0.35);
+  background: linear-gradient(90deg, #05a7c0, #0896c6);
+}
+
+.join-button:active:not([disabled]) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 8px 30px rgba(2, 132, 199, 0.22);
+  transition-duration: 110ms;
+}
+
+/* disabled state */
+.join-button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* keep existing large launch-button rules intact (unused here) */

@@ -127,7 +127,12 @@ export default function App() {
   return (
     <div className="app">
       <div>
-        {!showMainPage && <WelcomePage setShowMainPage={setShowMainPage} />}
+        {!showMainPage && (
+          <WelcomePage
+            setShowMainPage={setShowMainPage}
+            setUsername={setUsername}
+          />
+        )}
         {showMainPage && (
           <div className="app-container">
             <header className="header">
