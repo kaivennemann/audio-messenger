@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { MainPage } from './components';
 import { AudioToneListener } from './conversion/listener.js';
 import playMessage from './audio-output/play.js';
@@ -6,63 +6,23 @@ import playMessage from './audio-output/play.js';
 import './styles/App.css';
 import './styles/Styles.css';
 
-// HACK: If I put this inside the App function, it seems to reinitialize
-// every time the component rerenders (which breaks things).
-// But that isn't supposed to happen, right?
-// @Tom/Kai?
-const audioListener = new AudioToneListener();
-
 export default function App() {
+
+  // Initialize once and persist across renders
+  const audioListenerRef = useRef(null);
+
+  if (audioListenerRef.current === null) {
+    audioListenerRef.current = new AudioToneListener();
+  }
+
+  const audioListener = audioListenerRef.current;
+
   // messaging state: {0: none, 1: transmitting, 2: receiving}
   let [messagingState, setMessagingState] = useState(0);
+
   const [username, setUsername] = useState('tempUser');
-  const [messages, setMessages] = useState([
-    {
-      id: 0,
-      content: 'Hello! This is the first message.',
-      sender: 'Alice',
-    },
-    {
-      id: 1,
-      content: 'This is a sample message stack component.',
-      sender: 'Bob',
-    },
-    {
-      id: 2,
-      content: 'Each message is rendered using the Message component.',
-      sender: 'Alice',
-    },
-    {
-      id: 3,
-      content: 'Hello! This is the first message.',
-      sender: 'Alice',
-    },
-    {
-      id: 4,
-      content: 'This is a sample message stack component.',
-      sender: 'Bob',
-    },
-    {
-      id: 5,
-      content: 'Each message is rendered using the Message component.',
-      sender: 'Alice',
-    },
-    {
-      id: 6,
-      content: 'Hello! This is the first message.',
-      sender: 'Alice',
-    },
-    {
-      id: 7,
-      content: 'This is a sample message stack component.',
-      sender: 'Bob',
-    },
-    {
-      id: 8,
-      content: 'Each message is rendered using the Message component.',
-      sender: 'Alice',
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
+  const [currentMessage, setCurrentMessage] = useState([]);
 
   async function sendMessage(msg) {
     // HACK: Initialize AudioContext on user gesture
@@ -75,38 +35,58 @@ export default function App() {
     // and calles this initialize function instead.
     await audioListener.initialize();
 
+    if (messagingState !== 0) return;
+
     setMessagingState(1);
     // NOTE: Adjust the timing parameters here!
-    await playMessage(msg, 60, 20);
-    setMessagingState(0);
-    let msg_id = messages.length;
-    setMessages(messages => {
-      return [...messages, { id: msg_id, content: msg, sender: username }];
-    });
+    setTimeout(
+      async () => {
+        console.log("waited .2 seconds")
+        await playMessage(msg, 60, 20);
+        setMessagingState(0);
+        let msg_id = messages.length;
+        setMessages(messages => {
+          return [...messages, { id: msg_id, content: msg, sender: username }];
+        });
+      },
+      20
+    );
+
   }
 
-  const currentMessage = [];
+  // useEffect(() => {
+  //   // This function runs every time 'var' changes
+  //   if (currentMessage = [])
+
+  //   // Your logic here
+
+  // }, [currentMessage]);
 
   function onToken(token) {
     if (messagingState === 1) {
       return;
     }
     console.log('Received token:', token);
-    currentMessage.push(token);
+    if (messagingState === 0) return;
+
+    setCurrentMessage(currentMessage => [...currentMessage, token]);
   }
   function onMessageStart() {
-    if (messagingState === 1) {
+    if (messagingState !== 0) {
       return;
     }
     console.log('Message started');
-    currentMessage.length = 0;
+    setMessagingState(2)
+    setCurrentMessage([]);
   }
   function onMessageEnd() {
-    if (messagingState === 1) {
+    if (messagingState !== 2) {
       return;
     }
     console.log('Message ended');
+    setMessagingState(0);
     const messageStr = currentMessage.join('');
+    setCurrentMessage([])
     let msg_id = messages.length;
     setMessages(messages => {
       return [
@@ -131,6 +111,7 @@ export default function App() {
         messagingState={messagingState}
         messages={messages}
         playSound={sendMessage}
+        incomingMessage={currentMessage}
       />
     </div>
   );
