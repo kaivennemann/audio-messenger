@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../styles/WelcomePage.css';
 
 const WelcomePage = ({ setShowMainPage }) => {
   const [leaving, setLeaving] = useState(false);
