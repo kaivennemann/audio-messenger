@@ -40,7 +40,7 @@ export default function App() {
     // NOTE: Adjust the timing parameters here!
     setTimeout(async () => {
       console.log('waited 20 ms');
-      await playMessage(msg, 20, 0);
+      await playMessage(msg, 30, 0);
       setMessagingState(0);
       let msg_id = messages.length;
       setMessages(messages => {

@@ -81,7 +81,7 @@ export class AudioToneListener {
         this.checkForToken();
       }
 
-      setTimeout(detect, 2);
+      setTimeout(detect, 5);
     };
 
     detect();
