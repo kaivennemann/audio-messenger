@@ -1,4 +1,6 @@
-import { GF256 as gf } from './GF256';
+import { GF256 } from './GF256';
+
+const gf = new GF256();
 
 export class CauchyRS {
   constructor(k, n, alphabetSize = 72) {
