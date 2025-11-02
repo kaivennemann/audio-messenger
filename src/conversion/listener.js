@@ -81,7 +81,7 @@ export class AudioToneListener {
         this.checkForToken();
       }
 
-      requestAnimationFrame(detect);
+      setTimeout(detect, 2);
     };
 
     detect();
