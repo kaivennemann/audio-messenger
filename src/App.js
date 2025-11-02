@@ -80,7 +80,7 @@ export default function App() {
 
     setMessagingState(1);
     // NOTE: Adjust the timing parameters here!
-    await playMessage(msg, 60, 20);
+    await playMessage(msg, 20, 0);
     setMessagingState(0);
     let msg_id = messages.length;
     setMessages(messages => {
