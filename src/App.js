@@ -27,7 +27,7 @@ export default function App() {
     {
       id: 0,
       content:
-        'Welcome to NoyZChannel, the noisiest messaging channel! Type and send a message to get started.',
+        'Welcome to NoyZChannel, the noisiest messaging channel! Type a message to get started.',
       sender: 'System',
     },
   ]);
@@ -41,10 +41,11 @@ export default function App() {
     setTimeout(async () => {
       console.log('waited .2 seconds');
       await playMessage(msg, 60, 20);
+      console.log('message played');
       setMessagingState(0);
       let msg_id = messages.length;
       setMessages(messages => {
-        return [...messages, { id: msg_id, content: msg, sender: username }];
+        return [...messages, { id: msg_id, content: msg, sender: 'You' }];
       });
     }, 20);
   }

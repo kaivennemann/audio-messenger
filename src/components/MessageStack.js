@@ -2,15 +2,15 @@ import React, { useEffect, useRef } from 'react';
 
 import { Message, LoadingMessage } from './';
 
-const MessageStack = ({ messages, loading, incomingMessage }) => {
+const MessageStack = ({ messages, loading, username, incomingMessage }) => {
   const scrollableRef = useRef(null);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
-    if (scrollableRef.current) {
+    if (loading || scrollableRef.current) {
       scrollToBottom();
     }
-  }, [messages]); // Triggers when messages array changes
+  }, [messages, loading]); // Triggers when messages array changes or loading state changes
 
   function animateScroll(element, duration) {
     const start = element.scrollTop;
@@ -48,7 +48,6 @@ const MessageStack = ({ messages, loading, incomingMessage }) => {
 
   return (
     <>
-
       <div className="message-stack" ref={scrollableRef}>
         {messages.length === 0 ? (
           <div className="empty-state">No messages yet</div>
@@ -64,7 +63,11 @@ const MessageStack = ({ messages, loading, incomingMessage }) => {
 
         {loading ? <LoadingMessage /> : ''}
       </div>
-      {incomingMessage.length === 0 ? '' : <Message content={incomingMessage.join('')} sender={'Remote'} />}
+      {incomingMessage.length === 0 ? (
+        ''
+      ) : (
+        <Message content={incomingMessage.join('')} sender={'Remote'} />
+      )}
     </>
   );
 };
