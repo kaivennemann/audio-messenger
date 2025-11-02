@@ -24,7 +24,7 @@ const MainPage = ({
         onSend={sendMessage}
         alphabet={alphabet}
         username={username}
-        loading={messagingState === 1}
+        loading={messagingState === 1 || messagingState === 2}
       />
     </div>
   );
