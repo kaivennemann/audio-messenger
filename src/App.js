@@ -86,23 +86,28 @@ export default function App() {
     setMessagingState(2);
     setCurrentMessage([]);
   }
+
   function onMessageEnd() {
     if (messagingState !== 2) {
       return;
     }
     console.log('Message ended');
+
     setMessagingState(0);
     setDeliminatorReceived(false);
-    setReceivedUsername('');
     const messageStr = currentMessage.join('');
     setCurrentMessage([]);
     let msg_id = messages.length;
-    setMessages(messages => {
-      return [
-        ...messages,
-        { id: msg_id, content: messageStr, sender: receivedUsername },
-      ];
-    });
+    if (receivedUsername.length <= 9) {
+      setMessages(messages => {
+        return [
+          ...messages,
+          { id: msg_id, content: messageStr, sender: receivedUsername },
+        ];
+      });
+    }
+
+    setReceivedUsername('');
   }
 
   // HACK: HACKY!!
