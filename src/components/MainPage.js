@@ -6,7 +6,7 @@ const MainPage = ({
   messagingState,
   messages,
   playSound,
-  addCharacter,
+  incomingMessage,
 }) => {
   const [alphabet, setAlphabet] = useState(
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-+() '
@@ -16,10 +16,15 @@ const MainPage = ({
     // TODO: send message somewhere
     playSound(msg);
   }
+  console.log(messagingState);
 
   return (
     <div className="main-page">
-      <MessageStack messages={messages} loading={messagingState !== 0} />
+      <MessageStack
+        messages={messages}
+        loading={messagingState === 1}
+        incomingMessage={incomingMessage}
+      />
       <InputBar onSend={sendMessage} alphabet={alphabet} />
     </div>
   );
