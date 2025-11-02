@@ -3,9 +3,9 @@ import schema from './schema/basic.json' with { type: 'json' };
 import { findClosestValidFrequency } from '../conversion/convert';
 
 const SPECIAL_TOKENS = ['^', '$', '#', '!', '&', '*'];
-const START = '^#!';
-const END = '$&*';
-const SPECIAL_LENGTH = 3;
+const START = '^#';
+const END = '$$';
+const SPECIAL_LENGTH = 2;
 
 export class AudioToneListener {
   constructor() {
