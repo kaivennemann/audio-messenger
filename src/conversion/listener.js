@@ -149,14 +149,14 @@ export class AudioToneListener {
           this.current_special = [];
         }
       } else {
-        if (this.consequativeErasureCount > 5) {
-          this.handleMessageEnd();
-          this.current_special = [];
-        }
         this.handleSymbol(token);
       }
     } else {
       this.detections.shift();
+    }
+    if (this.consequativeErasureCount > 5) {
+      this.handleMessageEnd();
+      this.current_special = [];
     }
   }
 
