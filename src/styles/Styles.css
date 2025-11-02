@@ -1,177 +1,204 @@
 body {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Inter', sans-serif;
 }
 
 /* Make the app fill the viewport so the main page can take remaining space */
-.app {
+.app-container {
   /* use a fixed viewport height so flex children can reliably size */
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  background: linear-gradient(180deg, #071425 0%, #071a2b 100%);
+  padding: 32px 0;
+  color: #e6eef6;
 }
 
-/* Make the main page take the full available height under the header
-   so the input bar sits flush at the bottom and the message stack can scroll */
 .main-page {
-  /* take the remaining space under the header; allow children to shrink/scroll */
   flex: 1 1 auto;
-  min-height: 0; /* required so .message-stack can scroll inside flex */
-  max-height: calc(100vh - 64px);
+  min-height: 0;
+  max-height: calc(100vh - 140px);
   width: max(55vw, 600px);
-  margin: 0 auto; /* center horizontally only (don't center vertically) */
+  margin: 20px auto 0;
   display: flex;
   flex-direction: column;
   font-family: 'Courier New', Courier, monospace;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(0, 0, 0, 0.02)
+  );
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow:
+    0 20px 60px rgba(2, 132, 199, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(6px);
+  color: #dbeefc;
 }
 
 /* Header */
 .header {
-  background-color: #2563eb;
-  color: white;
-  padding: 16px;
-  /* removed box-shadow for a flatter CLI look */
+  background: linear-gradient(
+    90deg,
+    rgba(14, 165, 233, 0.12),
+    rgba(3, 105, 161, 0.08)
+  );
+  color: #e6f7ff;
+  padding: 12px 24px;
+  border-radius: 10px;
+  width: calc(55vw + 2rem);
+  max-width: 960px;
+  margin: 0 auto;
+  box-shadow:
+    0 8px 40px rgba(2, 132, 199, 0.08),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(6px);
 }
 
 .header-title {
   margin: 0;
-  font-size: 32px;
-  font-weight: bold;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #eaf7ff;
+  font-family: 'Inter', sans-serif;
 }
 
-/* Message Stack */
+/* Message Stack — adjust spacing and colors for the futuristic theme */
 .message-stack {
   overflow-y: auto;
-  gap: 6px;
-  overflow-y: auto;
+  gap: 12px;
   padding: 16px;
-  /* extra bottom padding so the last message doesn't sit under the input bar */
-}
-
-.empty-state {
-  text-align: center;
-  color: #9ca3af;
-  margin-top: 32px;
-}
-
-/* Individual Message */
-.message {
-  background-color: transparent;
   display: flex;
-  border: none;
-  border-radius: 0;
-  padding: 6px 0;
-  margin-bottom: 0;
-  box-shadow: none;
+  flex-direction: column;
+}
+
+/* Individual Message — translucent cards with a left accent and subtle glow */
+.message {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.012),
+    rgba(0, 0, 0, 0.02)
+  );
+  display: block;
+  border-left: 4px solid rgba(3, 105, 161, 0.6);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.035);
+  color: #dfefff;
 }
 
 .message-header {
-  display: inline-flex;
+  display: flex;
   gap: 8px;
   align-items: center;
-  margin-bottom: 0;
+  margin-bottom: 6px;
 }
 
 .sender {
-  font-weight: 400;
-  color: #7b818c; /* muted gray */
-  font-size: 16px;
-  padding-right: 6px;
+  font-weight: 600;
+  color: #7bd1ff; /* neon cyan */
+  font-size: 14px;
 }
 
 .timestamp {
   font-size: 12px;
-  color: #6b7280;
+  color: #9fb8c9;
 }
 
 .content {
   margin: 0;
-  color: #374151;
-  display: inline;
-  font-size: 22px; /* increased message text size */
-  line-height: 1.8; /* improve readability */
+  color: #e6f7ff;
+  display: block;
+  font-size: 18px;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
-/* Input Bar */
+/* Input Bar — glassy, rounded, with neon accents for buttons */
 .input-bar {
-  border-top: 1px solid #e5e7eb;
+  border-top: none;
   padding: 16px;
-  background-color: white;
-  flex: none; /* keep input-bar at the bottom of .main-page */
-  /* ensure it stays at the bottom edge of the main page */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(0, 0, 0, 0.02)
+  );
+  flex: none;
   position: relative;
   z-index: 10;
+  box-shadow: 0 -6px 40px rgba(2, 132, 199, 0.04);
+  backdrop-filter: blur(6px);
+  border-radius: 0 0 12px 12px;
 }
 
 .input-container {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .input {
   flex: 1;
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
   font-size: 14px;
   outline: none;
+  background: rgba(0, 0, 0, 0.12);
+  color: #e6f7ff;
 }
 
+/* input focus: neon outline */
 .input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: rgba(14, 165, 233, 0.7);
+  box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.06);
 }
 
+/* Primary buttons match the launch button style but scaled down */
 .button {
-  padding: 8px 24px;
-  background-color: #2563eb;
+  padding: 8px 20px;
+  background: linear-gradient(90deg, #06b6d4, #0ea5e9);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    background-color 180ms linear;
+  box-shadow: 0 8px 30px rgba(14, 165, 233, 0.15);
 }
 
 .button:hover {
-  background-color: #1d4ed8;
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(90deg, #05a7c0, #0896c6);
+  box-shadow: 0 12px 50px rgba(14, 165, 233, 0.18);
 }
 
 .button:active {
-  background-color: #1e40af;
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.12);
 }
 
-.skeleton {
-  position: relative;
-  overflow: hidden;
-  background-color: #e5e7eb;
-  /* border-radius: 4px;
-  width: 100%; */
-  height: 50px;
-}
-
-.skeleton::after {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-    to right,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  animation: shimmer 1.5s infinite;
-  content: '';
-}
-
-@keyframes shimmer {
-  from {
-    transform: translateX(-100%);
+/* Keep reduced-motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .launch-button,
+  .launch-button:hover,
+  .launch-button:active,
+  .button,
+  .button:hover,
+  .button:active {
+    transition: none;
+    animation: none;
+    transform: none;
   }
-  to {
-    transform: translateX(100%);
+
+  .welcome-container {
+    transition: none;
   }
 }
