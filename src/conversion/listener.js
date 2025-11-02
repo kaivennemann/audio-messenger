@@ -55,7 +55,7 @@ export class AudioToneListener {
 
     // Higher FFT size for better frequency resolution
     this.analyser.fftSize = 8192;
-    this.analyser.smoothingTimeConstant = 0.3;
+    this.analyser.smoothingTimeConstant = 0.0;
     this.source.connect(this.analyser);
 
     this.detectPeakFrequency();
@@ -95,7 +95,7 @@ export class AudioToneListener {
         this.checkForToken();
       }
 
-      requestAnimationFrame(detect);
+      setTimeout(detect, 5);
     };
 
     detect();

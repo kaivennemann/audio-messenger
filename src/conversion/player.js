@@ -45,17 +45,19 @@ export class AudioTonePlayer {
     oscillator.type = 'sine';
 
     // Add slight fade in/out to reduce clicking
-    const fadeTime = 0.01; // 10ms fade
+    // const fadeTime = 0.01; // 10ms fade
     const startTimeSeconds = startTime;
     const endTimeSeconds = startTime + duration / 1000;
 
-    gainNode.gain.setValueAtTime(0, startTimeSeconds);
-    gainNode.gain.linearRampToValueAtTime(
-      this.volume,
-      startTimeSeconds + fadeTime
-    );
-    gainNode.gain.setValueAtTime(this.volume, endTimeSeconds - fadeTime);
-    gainNode.gain.linearRampToValueAtTime(0, endTimeSeconds);
+    gainNode.gain.setValueAtTime(this.volume, startTimeSeconds);
+
+    // gainNode.gain.setValueAtTime(0, startTimeSeconds);
+    // gainNode.gain.linearRampToValueAtTime(
+    //   this.volume,
+    //   startTimeSeconds + fadeTime
+    // );
+    // gainNode.gain.setValueAtTime(this.volume, endTimeSeconds - fadeTime);
+    // gainNode.gain.linearRampToValueAtTime(0, endTimeSeconds);
 
     oscillator.start(startTimeSeconds);
     oscillator.stop(endTimeSeconds);
