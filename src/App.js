@@ -7,7 +7,7 @@ import './styles/App.css';
 import './styles/Styles.css';
 import WelcomePage from './components/WelcomePage.js';
 
-export const CAUCHY = false;
+export const CAUCHY = true;
 
 export default function App() {
   const [showMainPage, setShowMainPage] = useState(false);
@@ -124,12 +124,22 @@ export default function App() {
 
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.sender) {
+        // Parse username and message from corrected text
+        const delimiterIndex = correctedText.indexOf('%%');
+        let correctedUsername = lastMessage.sender; // Default to existing
+        let correctedContent = correctedText;
+
+        if (delimiterIndex !== -1) {
+          correctedUsername = correctedText.substring(0, delimiterIndex);
+          correctedContent = correctedText.substring(delimiterIndex + 2); // Skip '%%'
+        }
+
         // Create a new array with the updated message
         const updatedMessages = messages.slice(0, -1);
         updatedMessages.push({
           id: lastMessage.id,
-          content: correctedText,
-          sender: lastMessage.sender,
+          content: correctedContent,
+          sender: correctedUsername,
           timestamp: Date.now(), // Update timestamp to force re-render
         });
         return updatedMessages;
