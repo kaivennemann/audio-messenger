@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import '../styles/WelcomePage.css';
+import { audioListener } from '../App';
 
 const WelcomePage = ({ setShowMainPage, setUsername }) => {
   const [leaving, setLeaving] = useState(false);
   const [name, setName] = useState('');
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
+    await audioListener.initialize();
+
     const trimmed = name.trim();
     if (!trimmed) return;
     setLeaving(true);
