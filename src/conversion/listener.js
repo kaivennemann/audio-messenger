@@ -3,7 +3,7 @@ import schema from './schema/basic.json' with { type: 'json' };
 import { findClosestValidFrequency } from '../conversion/convert';
 
 export class AudioToneListener {
-  constructor(onToken = null) {
+  constructor() {
     this.initialized = false;
     this.audioContext = null;
     this.source = null;
@@ -12,7 +12,7 @@ export class AudioToneListener {
 
     this.onMessageStart = null;
     this.onMessageEnd = null;
-    this.onToken = onToken;
+    this.onToken = null;
   }
 
   /**
