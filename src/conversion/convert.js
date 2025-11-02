@@ -1,7 +1,7 @@
 import schema from './schema/basic.json' with { type: 'json' };
 
 export function convertFromTextToHz(data) {
-  data = '^#!' + data + '$&*';
+  data = '^' + data + '$';
 
   const arredData = data.split('');
 
@@ -12,9 +12,7 @@ export function convertFromTextToHz(data) {
       throw new Error(`cannot use char: ${char}`);
     }
 
-    for (let item of schema.frequencyMap[char]) {
-      result.push(item);
-    }
+    result.push(schema.frequencyMap[char]);
   }
 
   return result;

@@ -66,24 +66,26 @@ export class AudioTonePlayer {
   }
 
   /**
- * Play a sequence of frequencies
- * @param {Array<number>} frequencies - Array of frequencies to play
- * @param {Function} onProgress - Callback for progress updates (index, total)
- * @returns {Promise<void>} - Resolves when playback is complete
- */
+   * Play a sequence of frequencies
+   * @param {Array<number>} frequencies - Array of frequencies to play
+   * @param {Function} onProgress - Callback for progress updates (index, total)
+   * @returns {Promise<void>} - Resolves when playback is complete
+   */
   async playSequence(frequencies, onProgress = null) {
     if (!this.audioContext) {
       await this.initialize();
     }
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this.isPlaying = true;
       let currentTime = this.audioContext.currentTime + 0.1; // Small delay to start
       const totalDuration =
         frequencies.length * (this.toneDuration + this.toneGap);
 
       frequencies.forEach((freq, index) => {
-        currentTime = this.playTone(freq, this.toneDuration, currentTime);
+        for (const f of freq) {
+          currentTime = this.playTone(f, this.toneDuration, currentTime);
+        }
         currentTime += this.toneGap / 1000; // Add gap between tones
 
         // Schedule progress callback
