@@ -1,14 +1,15 @@
 import schema from './schema/basic.json' with { type: 'json' };
 
 import { findClosestValidFrequency } from '../conversion/convert';
+import { cauchyDecode, ERASURE_MARKER } from './cauchy.js';
 
-const SPECIAL_TOKENS = ['^', '$', '#', '!', '&', '*'];
-const START = '^#!';
-const END = '$&*';
+const SPECIAL_TOKENS = ['^', '$'];
+const START = '^';
+const END = '$';
 const SPECIAL_LENGTH = 3;
 
 export class AudioToneListener {
-  constructor() {
+  constructor(useCauchy = false, redundancy = 4) {
     this.initialized = false;
     this.audioContext = null;
     this.source = null;
@@ -19,8 +20,21 @@ export class AudioToneListener {
     this.onMessageStart = null;
     this.onMessageEnd = null;
     this.onToken = null;
+    this.onCorrectedMessage = null; // Called when Cauchy successfully decodes and corrects the message
 
     this.current_special = [];
+
+    // Cauchy erasure code support
+    this.useCauchy = useCauchy;
+    this.redundancy = redundancy;
+    this.messageBuffer = [];
+    this.isReceivingMessage = false;
+    this.erasureTimeout = null;
+    this.consecutiveErasures = 0;
+    this.MAX_CONSECUTIVE_ERASURES = 3; // Treat as end code if this many erasures in a row
+    // Each character = 2 tones × (200ms tone + 50ms gap) = 500ms
+    // Set timeout to 500ms to quickly detect missing characters
+    this.ERASURE_TIMEOUT_MS = 500;
   }
 
   /**
@@ -124,7 +138,18 @@ export class AudioToneListener {
       }
     }
 
+    // Reset erasure timeout when we successfully decode a token
+    if (token && this.erasureTimeout) {
+      clearTimeout(this.erasureTimeout);
+      this.erasureTimeout = null;
+    }
+
     if (token) {
+      // Reset consecutive erasures counter on successful decode
+      if (this.isReceivingMessage) {
+        this.consecutiveErasures = 0;
+      }
+
       // TODO: This is hardcoded for now. Change it later.
       if (SPECIAL_TOKENS.includes(token)) {
         this.current_special.push(token);
@@ -134,18 +159,130 @@ export class AudioToneListener {
           this.current_special.shift();
         }
 
-        if (this.current_special.join('') === START) {
+        if (token === START) {
+          this.isReceivingMessage = true;
+          this.messageBuffer = [];
+          this.consecutiveErasures = 0;
           this.onMessageStart();
           this.current_special = [];
-        } else if (this.current_special.join('') === END) {
+        } else if (token === END) {
           this.onMessageEnd();
+          if (this.useCauchy && this.isReceivingMessage) {
+            this.handleCauchyDecode();
+          }
+
+          if (this.erasureTimeout) {
+            clearTimeout(this.erasureTimeout);
+            this.erasureTimeout = null;
+          }
+
           this.current_special = [];
         }
       } else {
+        // Add to buffer if using Cauchy and receiving message
+        if (this.useCauchy && this.isReceivingMessage) {
+          this.messageBuffer.push(token);
+        }
+        // Always call onToken to show incoming characters
         this.onToken(token);
+      }
+
+      // Set up erasure timeout for next token
+      if (this.isReceivingMessage) {
+        this.setupErasureTimeout();
       }
     } else {
       this.detections.shift();
     }
+  }
+
+  /**
+   * Set up timeout to detect erasures (missing characters)
+   */
+  setupErasureTimeout() {
+    if (this.erasureTimeout) {
+      clearTimeout(this.erasureTimeout);
+    }
+
+    this.erasureTimeout = setTimeout(() => {
+      if (this.isReceivingMessage) {
+        // Increment consecutive erasures
+        this.consecutiveErasures++;
+        console.warn(
+          `Erasure detected - character missing (${this.consecutiveErasures} consecutive)`
+        );
+
+        // Check if too many consecutive erasures - treat as end of message
+        if (this.consecutiveErasures >= this.MAX_CONSECUTIVE_ERASURES) {
+          console.log(
+            'Multiple consecutive erasures detected - treating as end of message'
+          );
+          if (this.onMessageEnd) {
+            this.onMessageEnd();
+          }
+          if (this.useCauchy) {
+            this.handleCauchyDecode();
+          }
+
+          return; // Don't continue the timeout
+        }
+
+        // Mark an erasure
+        if (this.useCauchy) {
+          this.messageBuffer.push(ERASURE_MARKER);
+        }
+
+        // Continue waiting for next character
+        this.setupErasureTimeout();
+      }
+    }, this.ERASURE_TIMEOUT_MS);
+  }
+
+  /**
+   * Handle Cauchy decoding at end of message
+   */
+  handleCauchyDecode() {
+    if (this.erasureTimeout) {
+      clearTimeout(this.erasureTimeout);
+      this.erasureTimeout = null;
+    }
+
+    this.isReceivingMessage = false;
+    this.consecutiveErasures = 0;
+
+    const receivedMessage = this.messageBuffer.join('');
+    console.log(
+      'Received with erasures:',
+      receivedMessage
+        .split('')
+        .map(c => (c === ERASURE_MARKER ? '_' : c))
+        .join('')
+    );
+
+    // Calculate original length (received length - redundancy)
+    const originalLength = Math.max(
+      1,
+      this.messageBuffer.length - this.redundancy
+    );
+
+    // Attempt to decode
+    const decoded = cauchyDecode(
+      receivedMessage,
+      originalLength,
+      this.redundancy
+    );
+
+    if (decoded) {
+      console.log('Cauchy decoded successfully:', decoded);
+
+      // Emit the corrected message if callback is set
+      if (this.onCorrectedMessage) {
+        this.onCorrectedMessage(decoded);
+      }
+    } else {
+      console.error('Cauchy decode failed - too many erasures');
+    }
+
+    this.messageBuffer = [];
   }
 }

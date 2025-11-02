@@ -47,28 +47,29 @@ const MessageStack = ({ messages, loading, username, incomingMessage }) => {
   }
 
   return (
-    <>
-      <div className="message-stack" ref={scrollableRef}>
-        {messages.length === 0 ? (
-          <div className="empty-state">No messages yet</div>
-        ) : (
-          messages.map(message => (
-            <Message
-              key={message.id}
-              content={message.content}
-              sender={message.sender}
-            />
-          ))
-        )}
+    <div className="message-stack" ref={scrollableRef}>
+      {messages.length === 0 ? (
+        <div className="empty-state">No messages yet</div>
+      ) : (
+        messages.map(message => (
+          <Message
+            key={message.id}
+            content={message.content}
+            sender={message.sender}
+          />
+        ))
+      )}
 
-        {loading ? <LoadingMessage /> : ''}
-      </div>
+      {loading ? <LoadingMessage /> : ''}
       {incomingMessage.content.length === 0 ? (
         ''
       ) : (
-        <Message content={incomingMessage.content.join('')} sender={incomingMessage.sender} />
+        <Message
+          content={incomingMessage.content.join('')}
+          sender={incomingMessage.sender}
+        />
       )}
-    </>
+    </div>
   );
 };
 

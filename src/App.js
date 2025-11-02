@@ -7,6 +7,8 @@ import './styles/App.css';
 import './styles/Styles.css';
 import WelcomePage from './components/WelcomePage.js';
 
+export const CAUCHY = false;
+
 export default function App() {
   const [showMainPage, setShowMainPage] = useState(false);
 
@@ -14,7 +16,7 @@ export default function App() {
   const audioListenerRef = useRef(null);
 
   if (audioListenerRef.current === null) {
-    audioListenerRef.current = new AudioToneListener();
+    audioListenerRef.current = new AudioToneListener(CAUCHY);
   }
 
   const audioListener = audioListenerRef.current;
@@ -29,6 +31,7 @@ export default function App() {
       content:
         'Welcome to NoyZChannel, the noisiest messaging channel! Type a message to get started.',
       sender: 'System',
+      timestamp: Date.now(),
     },
   ]);
   const [currentMessage, setCurrentMessage] = useState([]);
@@ -105,10 +108,43 @@ export default function App() {
     });
   }
 
+  function onCorrectedMessage(correctedText) {
+    console.log('Updating message with corrected text:', correctedText);
+    // Update the last message with the corrected version from Cauchy decoder
+    setMessages(messages => {
+      if (messages.length === 0) return messages;
+
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.sender) {
+        // Parse username and message from corrected text
+        const delimiterIndex = correctedText.indexOf('%%');
+        let correctedUsername = lastMessage.sender; // Default to existing
+        let correctedContent = correctedText;
+
+        if (delimiterIndex !== -1) {
+          correctedUsername = correctedText.substring(0, delimiterIndex);
+          correctedContent = correctedText.substring(delimiterIndex + 2); // Skip '%%'
+        }
+
+        // Create a new array with the updated message
+        const updatedMessages = messages.slice(0, -1);
+        updatedMessages.push({
+          id: lastMessage.id,
+          content: correctedContent,
+          sender: correctedUsername,
+          timestamp: Date.now(), // Update timestamp to force re-render
+        });
+        return updatedMessages;
+      }
+      return messages;
+    });
+  }
+
   // HACK: HACKY!!
   audioListener.onToken = onToken;
   audioListener.onMessageStart = onMessageStart;
   audioListener.onMessageEnd = onMessageEnd;
+  audioListener.onCorrectedMessage = onCorrectedMessage;
 
   return (
     <div className="app">
