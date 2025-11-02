@@ -83,6 +83,8 @@ body {
   padding: 16px;
   display: flex;
   flex-direction: column;
+  scrollbar-width: auto;
+  scrollbar-color: rgba(3, 105, 161, 0.6) rgba(2, 132, 199, 0.035);
 }
 
 /* Individual Message — translucent cards with a left accent and subtle glow */
