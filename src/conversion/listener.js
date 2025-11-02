@@ -44,39 +44,75 @@ export class AudioToneListener {
     this.analyser.smoothingTimeConstant = 0.0;
     this.source.connect(this.analyser);
 
-    this.detectPeakFrequency();
+    this.amplitudeThreshold = 0;
+    this.calcAverageAmplitude();
+
+    this.runSoundDetectionForever();
   }
 
-  detectPeakFrequency() {
+  calcAverageAmplitude() {
+    const maxLength = 100;
+    const timeToRun = 1000;
+    const recordings = [];
+
+    const calculate = () => {
+      const sum = recordings.reduce((a, b) => a + b, 0);
+      const average = sum / recordings.length;
+      console.log('Average Amplitude:', average);
+      this.amplitudeThreshold = average * 1.5;
+    };
+
     const detect = () => {
-      const bufferLength = this.analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
+      const { frequency, maxAmplitude } =
+        this.detectPeakFrequencyAndAmplitude();
 
-      this.analyser.getByteFrequencyData(dataArray);
+      recordings.push(maxAmplitude);
 
-      const sampleRate = this.audioContext.sampleRate;
-      const binWidth = sampleRate / this.analyser.fftSize;
-
-      // Focus on the frequency range used in the schema (400-8000 Hz)
-      const minBin = Math.floor(2800 / binWidth);
-      const maxBin = Math.ceil(8200 / binWidth);
-
-      let maxAmplitude = 0;
-      let peakBin = minBin;
-
-      for (let i = minBin; i < maxBin && i < bufferLength; i++) {
-        if (dataArray[i] > maxAmplitude) {
-          maxAmplitude = dataArray[i];
-          peakBin = i;
-        }
+      if (recordings.length < maxLength) {
+        setTimeout(detect, timeToRun / maxLength);
+      } else {
+        calculate();
       }
+    };
 
-      const frequency = peakBin * binWidth;
+    detect();
+  }
 
-      // Find closest valid frequency
+  detectPeakFrequencyAndAmplitude() {
+    const bufferLength = this.analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    this.analyser.getByteFrequencyData(dataArray);
+
+    const sampleRate = this.audioContext.sampleRate;
+    const binWidth = sampleRate / this.analyser.fftSize;
+
+    // Focus on the frequency range used in the schema (400-8000 Hz)
+    const minBin = Math.floor(2800 / binWidth);
+    const maxBin = Math.ceil(8200 / binWidth);
+
+    let maxAmplitude = 0;
+    let peakBin = minBin;
+
+    for (let i = minBin; i < maxBin && i < bufferLength; i++) {
+      if (dataArray[i] > maxAmplitude) {
+        maxAmplitude = dataArray[i];
+        peakBin = i;
+      }
+    }
+
+    const frequency = peakBin * binWidth;
+
+    return { frequency, maxAmplitude };
+  }
+
+  runSoundDetectionForever() {
+    const detect = () => {
+      const { frequency, maxAmplitude } =
+        this.detectPeakFrequencyAndAmplitude();
       const closestValid = findClosestValidFrequency(frequency);
 
-      if (closestValid !== null && maxAmplitude > 10) {
+      if (closestValid !== null && maxAmplitude > this.amplitudeThreshold) {
         this.addDetection(closestValid);
         console.log('Amplitude:', maxAmplitude, 'Frequency:', closestValid);
         this.checkForToken();
