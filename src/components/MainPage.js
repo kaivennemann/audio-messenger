@@ -12,7 +12,6 @@ const MainPage = ({
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-+() '
   );
 
-
   return (
     <div className="main-page">
       <MessageStack
@@ -21,7 +20,12 @@ const MainPage = ({
         username={username}
         incomingMessage={incomingMessage}
       />
-      <InputBar onSend={sendMessage} alphabet={alphabet} username={username} />
+      <InputBar
+        onSend={sendMessage}
+        alphabet={alphabet}
+        username={username}
+        loading={messagingState === 1}
+      />
     </div>
   );
 };
