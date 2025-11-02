@@ -42,7 +42,7 @@ export default function App() {
     setTimeout(async () => {
       console.log('waited 20 ms');
       let full_message = username + '%%' + msg;
-      await playMessage(full_message, 30, 0);
+      await playMessage(full_message, 40, 0);
       setMessagingState(0);
       let msg_id = messages.length;
       setMessages(messages => {
@@ -98,7 +98,11 @@ export default function App() {
     const messageStr = currentMessage.join('');
     setCurrentMessage([]);
     let msg_id = messages.length;
-    if (1 <= receivedUsername.length && receivedUsername.length <= 9 && currentMessage.length > 0) {
+    if (
+      1 <= receivedUsername.length &&
+      receivedUsername.length <= 9 &&
+      currentMessage.length > 0
+    ) {
       setMessages(messages => {
         return [
           ...messages,
