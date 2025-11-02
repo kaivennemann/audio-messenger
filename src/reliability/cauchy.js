@@ -1,4 +1,4 @@
-import { GF256 } from './GF256';
+import { GF256 } from './GF256.js';
 
 const gf = new GF256();
 
@@ -38,22 +38,19 @@ export class CauchyRS {
       );
     }
 
-    // Convert to field elements if they're characters
-    const data = dataSymbols.map(symbol => {
-      if (typeof symbol === 'string') {
-        return symbol.charCodeAt(0) % this.alphabetSize;
-      }
-      return symbol % this.alphabetSize;
-    });
+    // Data symbols are field elements, constrain to alphabet size
+    const data = dataSymbols.map(symbol => symbol % this.alphabetSize);
 
-    // Calculate parity symbols
+    // Calculate parity symbols and constrain to alphabet size
     const parity = [];
     for (let i = 0; i < this.generatorMatrix.length; i++) {
       let paritySymbol = 0;
       for (let j = 0; j < this.k; j++) {
-        paritySymbol ^= gf.multiply(this.generatorMatrix[i][j], data[j]);
+        const product = gf.multiply(this.generatorMatrix[i][j], data[j]);
+        paritySymbol ^= product;
       }
-      parity.push(paritySymbol);
+      // Apply modulo to keep within alphabet range
+      parity.push(paritySymbol % this.alphabetSize);
     }
 
     // Return systematic code: [data | parity]
@@ -64,6 +61,9 @@ export class CauchyRS {
     if (erasurePositions.length > this.n - this.k) {
       throw new Error('Too many erasures to correct');
     }
+
+    // Constrain symbols to alphabet size
+    const constrainedSymbols = receivedSymbols.map(s => s % this.alphabetSize);
 
     // Find available positions
     const availablePositions = [];
@@ -82,15 +82,16 @@ export class CauchyRS {
 
     // If we only have data symbols, return them directly
     if (usePositions.every(pos => pos < this.k)) {
-      return usePositions.map(pos => receivedSymbols[pos]);
+      return usePositions.map(pos => constrainedSymbols[pos]);
     }
 
     // Build decoding matrix
     const decodeMatrix = this._buildDecodeMatrix(usePositions);
-    const receivedSubset = usePositions.map(pos => receivedSymbols[pos]);
+    const receivedSubset = usePositions.map(pos => constrainedSymbols[pos]);
 
-    // Solve linear system
-    return this._solveLinearSystem(decodeMatrix, receivedSubset);
+    // Solve linear system and constrain to alphabet size
+    const decoded = this._solveLinearSystem(decodeMatrix, receivedSubset);
+    return decoded.map(val => val % this.alphabetSize);
   }
 
   _buildDecodeMatrix(positions) {

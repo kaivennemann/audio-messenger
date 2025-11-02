@@ -67,11 +67,13 @@ export class MessageCodec {
       console.log(`Block ${i} encoded field elements (output):`, encoded);
 
       // Convert field elements back to alphabet characters
+      // Apply modulo to constrain to alphabet size
       const encodedChars = encoded.map(fieldElement => {
         const idx = fieldElement % this.alphabetSize;
         const char = this.fieldToChar[idx];
         return char !== undefined ? char : ' ';
       });
+
 
       const encodedStr = encodedChars.join('');
       console.log(

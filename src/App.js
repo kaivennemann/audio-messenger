@@ -8,6 +8,7 @@ import './styles/Styles.css';
 import WelcomePage from './components/WelcomePage.js';
 
 export default function App() {
+  const [showMainPage, setShowMainPage] = useState(false);
   // Initialize once and persist across renders
   const audioListenerRef = useRef(null);
 
@@ -30,7 +31,6 @@ export default function App() {
     },
   ]);
   const [currentMessage, setCurrentMessage] = useState([]);
-  const [showMainPage, setShowMainPage] = useState(true);
 
   async function sendMessage(msg) {
     if (messagingState !== 0) return;
