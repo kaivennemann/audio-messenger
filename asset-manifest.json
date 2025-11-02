@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/audio-messenger/static/css/main.9ecda39b.css",
-    "main.js": "/audio-messenger/static/js/main.f0ea7c27.js",
+    "main.css": "/audio-messenger/static/css/main.8b5ebf9d.css",
+    "main.js": "/audio-messenger/static/js/main.c1ce2dfb.js",
     "static/js/453.2cae2a10.chunk.js": "/audio-messenger/static/js/453.2cae2a10.chunk.js",
     "index.html": "/audio-messenger/index.html",
-    "main.9ecda39b.css.map": "/audio-messenger/static/css/main.9ecda39b.css.map",
-    "main.f0ea7c27.js.map": "/audio-messenger/static/js/main.f0ea7c27.js.map",
+    "main.8b5ebf9d.css.map": "/audio-messenger/static/css/main.8b5ebf9d.css.map",
+    "main.c1ce2dfb.js.map": "/audio-messenger/static/js/main.c1ce2dfb.js.map",
     "453.2cae2a10.chunk.js.map": "/audio-messenger/static/js/453.2cae2a10.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.9ecda39b.css",
-    "static/js/main.f0ea7c27.js"
+    "static/css/main.8b5ebf9d.css",
+    "static/js/main.c1ce2dfb.js"
   ]
 }
