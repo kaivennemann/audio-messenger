@@ -1,4 +1,4 @@
-class GF256 {
+export class GF256 {
   constructor() {
     // GF(256) with primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 (0x11D)
     this.polynomial = 0x11d;
