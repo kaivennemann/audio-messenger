@@ -76,7 +76,8 @@ export default function App() {
     await audioListener.initialize();
 
     setMessagingState(1);
-    await playMessage(msg);
+    // NOTE: Adjust the timing parameters here!
+    await playMessage(msg, 60, 20);
     setMessagingState(0);
     let msg_id = messages.length;
     setMessages(messages => {
