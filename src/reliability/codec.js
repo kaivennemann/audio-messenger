@@ -13,7 +13,7 @@ export class MessageCodec {
 
     // Use schema alphabet (excluding start/end markers)
     this.alphabet = schema.alphabet.filter(c => c !== '^' && c !== '$');
-    this.alphabetSize = this.alphabet.length; // Should be 70
+    this.alphabetSize = this.alphabet.length;
 
     this.codec = new CauchyRS(this.k, this.n, this.alphabetSize);
 
@@ -74,13 +74,17 @@ export class MessageCodec {
       });
 
       const encodedStr = encodedChars.join('');
-      console.log(`Block ${i} encoded string: "${encodedStr}" (${encodedStr.length} chars)`);
+      console.log(
+        `Block ${i} encoded string: "${encodedStr}" (${encodedStr.length} chars)`
+      );
       encodedBlocks.push(encodedStr);
     }
 
     // Add header with number of blocks and original message length
     const header = this._createHeader(blocks.length, message.length);
-    console.log(`Header: "${header}" (numBlocks=${blocks.length}, messageLength=${message.length})`);
+    console.log(
+      `Header: "${header}" (numBlocks=${blocks.length}, messageLength=${message.length})`
+    );
 
     const result = header + encodedBlocks.join('');
     console.log(`Final encoded message: "${result}" (${result.length} chars)`);
@@ -96,7 +100,7 @@ export class MessageCodec {
     this.erasurePositions = [];
     this.currentBlock = 0;
     this.expectedBlocks = 0;
-    this.expectedSymbols = null; // Will be set after reading header
+    this.expectedSymbols = null; // Will be set after reading h eader
   }
 
   /**
@@ -113,8 +117,10 @@ export class MessageCodec {
       try {
         const header = this.receivedSymbols.join('');
         const { numBlocks } = this._parseHeader(header);
-        this.expectedSymbols = 2 + (numBlocks * this.n);
-        console.log(`Header received, expecting ${this.expectedSymbols} total symbols`);
+        this.expectedSymbols = 2 + numBlocks * this.n;
+        console.log(
+          `Header received, expecting ${this.expectedSymbols} total symbols`
+        );
       } catch (e) {
         console.warn('Failed to parse header:', e);
       }
@@ -156,13 +162,17 @@ export class MessageCodec {
       const header = this.receivedSymbols.slice(0, headerLength).join('');
       const { numBlocks, messageLength } = this._parseHeader(header);
 
-      console.log(`Decoded header: ${numBlocks} blocks, ${messageLength} chars`);
+      console.log(
+        `Decoded header: ${numBlocks} blocks, ${messageLength} chars`
+      );
 
-      const expectedTotal = headerLength + (numBlocks * this.n);
+      const expectedTotal = headerLength + numBlocks * this.n;
 
       // If we're missing symbols at the end, mark them as erasures
       if (this.receivedSymbols.length < expectedTotal) {
-        console.warn(`Missing ${expectedTotal - this.receivedSymbols.length} symbols at end`);
+        console.warn(
+          `Missing ${expectedTotal - this.receivedSymbols.length} symbols at end`
+        );
         for (let i = this.receivedSymbols.length; i < expectedTotal; i++) {
           this.receivedSymbols.push('\x00');
           this.erasurePositions.push(i);
@@ -172,7 +182,9 @@ export class MessageCodec {
       // Extract encoded data (skip header)
       const encodedData = this.receivedSymbols.slice(headerLength);
 
-      console.log(`Encoded data length: ${encodedData.length}, expected: ${numBlocks * this.n}`);
+      console.log(
+        `Encoded data length: ${encodedData.length}, expected: ${numBlocks * this.n}`
+      );
 
       // Adjust erasure positions (account for header)
       const adjustedErasures = this.erasurePositions
@@ -186,7 +198,9 @@ export class MessageCodec {
         const blockEnd = blockStart + this.n;
         const blockSymbols = encodedData.slice(blockStart, blockEnd);
 
-        console.log(`Block ${i}: received ${blockSymbols.length} symbols, expected ${this.n}`);
+        console.log(
+          `Block ${i}: received ${blockSymbols.length} symbols, expected ${this.n}`
+        );
 
         // Find erasures in this block
         const blockErasures = adjustedErasures
@@ -224,7 +238,6 @@ export class MessageCodec {
       const result = fullMessage.substring(0, messageLength);
       console.log('Trimmed to original length:', result);
       return result;
-
     } catch (error) {
       console.error('Decoding failed:', error);
       console.error('Stack:', error.stack);
@@ -262,7 +275,9 @@ export class MessageCodec {
     const maxPerField = this.alphabetSize;
 
     if (numBlocks >= maxPerField || messageLength >= maxPerField) {
-      throw new Error(`Message too long: ${numBlocks} blocks, ${messageLength} chars (max ${maxPerField})`);
+      throw new Error(
+        `Message too long: ${numBlocks} blocks, ${messageLength} chars (max ${maxPerField})`
+      );
     }
 
     const char1 = this.fieldToChar[numBlocks] || ' ';
