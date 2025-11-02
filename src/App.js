@@ -11,7 +11,7 @@ import WelcomePage from './components/WelcomePage.js';
 // every time the component rerenders (which breaks things).
 // But that isn't supposed to happen, right?
 // @Tom/Kai?
-const audioListener = new AudioToneListener();
+export const audioListener = new AudioToneListener();
 
 export default function App() {
   const [showMainPage, setShowMainPage] = useState(false);
