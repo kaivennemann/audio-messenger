@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/WelcomePage.css';
-import { audioListener } from '../App';
 
-const WelcomePage = ({ setShowMainPage, setUsername }) => {
+const WelcomePage = ({ setShowMainPage, setUsername, audioListener }) => {
   const [leaving, setLeaving] = useState(false);
   const [name, setName] = useState('');
 
@@ -12,11 +11,11 @@ const WelcomePage = ({ setShowMainPage, setUsername }) => {
     const trimmed = name.trim();
     if (!trimmed) return;
     setLeaving(true);
-    // match the welcome-container transition duration (600ms) + small buffer
+    // match the welcome-container transition duration (320ms) + small buffer
     setTimeout(() => {
       setUsername(trimmed);
       setShowMainPage(true);
-    }, 640);
+    }, 130);
   };
 
   const handleKeyDown = e => {
@@ -33,9 +32,12 @@ const WelcomePage = ({ setShowMainPage, setUsername }) => {
         className="name-input"
         type="text"
         value={name}
-        onChange={e => setName(e.target.value)}
+        onChange={e => {
+          // enforce max 10 chars (prevent longer input)
+          setName(e.target.value.slice(0, 9));
+        }}
         onKeyDown={handleKeyDown}
-        placeholder="Enter your display name"
+        placeholder="Enter your name"
         autoFocus
         aria-label="Display name"
       />
@@ -45,7 +47,7 @@ const WelcomePage = ({ setShowMainPage, setUsername }) => {
         onClick={handleJoin}
         disabled={!name.trim()}
       >
-        Join
+        Connect
       </button>
 
       <p className="welcome-subtitle">Ready to connect to the NoyZNetwork.</p>

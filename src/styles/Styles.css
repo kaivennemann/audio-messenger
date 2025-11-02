@@ -1,3 +1,9 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   font-family: 'Inter', sans-serif;
 }
@@ -6,19 +12,22 @@ body {
 .app-container {
   /* use a fixed viewport height so flex children can reliably size */
   min-height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: linear-gradient(180deg, #071425 0%, #071a2b 100%);
   padding: 32px 0;
   color: #e6eef6;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 .main-page {
   flex: 1 1 auto;
   min-height: 0;
   max-height: calc(100vh - 140px);
-  width: max(55vw, 600px);
+  width: min(100vw, 800pt);
   margin: 20px auto 0;
   display: flex;
   flex-direction: column;
@@ -35,6 +44,8 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(6px);
   color: #dbeefc;
+  overflow-y: hidden;
+  overflow-x: hidden;
 }
 
 /* Header */
@@ -98,9 +109,13 @@ body {
 }
 
 .sender {
+  white-space: nowrap;
   font-weight: 600;
   color: #7bd1ff; /* neon cyan */
   font-size: 14px;
+  /* How to vertically align at top of message header? */
+  margin-top: 7px;
+  align-self: flex-start;
 }
 
 .timestamp {

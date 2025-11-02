@@ -7,8 +7,6 @@ import './styles/App.css';
 import './styles/Styles.css';
 import WelcomePage from './components/WelcomePage.js';
 
-export const audioListener = new AudioToneListener();
-
 export default function App() {
   // Initialize once and persist across renders
   const audioListenerRef = useRef(null);
@@ -23,21 +21,18 @@ export default function App() {
   let [messagingState, setMessagingState] = useState(0);
 
   const [username, setUsername] = useState('tempUser');
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      id: 0,
+      content:
+        'Welcome to NoyZChannel, the noisiest messaging channel! Type and send a message to get started.',
+      sender: 'System',
+    },
+  ]);
   const [currentMessage, setCurrentMessage] = useState([]);
   const [showMainPage, setShowMainPage] = useState(true);
 
   async function sendMessage(msg) {
-    // HACK: Initialize AudioContext on user gesture
-    //
-    // Otherwise, browsers block audio playback and we get the following error:
-    // The AudioContext was not allowed to start. It must be resumed
-    // (or created) after a user gesture on the page. https://goo.gl/7K7WLu
-    //
-    // Tom/Kai: I think you should implement a button that starts the listener
-    // and calles this initialize function instead.
-    await audioListener.initialize();
-
     if (messagingState !== 0) return;
 
     setMessagingState(1);
@@ -52,14 +47,6 @@ export default function App() {
       });
     }, 20);
   }
-
-  // useEffect(() => {
-  //   // This function runs every time 'var' changes
-  //   if (currentMessage = [])
-
-  //   // Your logic here
-
-  // }, [currentMessage]);
 
   function onToken(token) {
     if (messagingState === 1) {
@@ -101,7 +88,6 @@ export default function App() {
     // Try to decode with erasure correction
     const decodedMessage = codec.finishReceiving();
     setMessagingState(0);
-    const messageStr = currentMessage.join('');
     setCurrentMessage([]);
     if (decodedMessage !== null) {
       console.log('Successfully decoded message:', decodedMessage);
@@ -143,12 +129,13 @@ export default function App() {
           <WelcomePage
             setShowMainPage={setShowMainPage}
             setUsername={setUsername}
+            audioListener={audioListener}
           />
         )}
         {showMainPage && (
           <div className="app-container">
             <header className="header">
-              <h1 className="header-title">NoZChannel</h1>
+              <h1 className="header-title">NoyZChannel</h1>
             </header>
             <MainPage
               username={username}
