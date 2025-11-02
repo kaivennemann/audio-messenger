@@ -27,7 +27,7 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   max-height: calc(100vh - 140px);
-  width: min(100vw, 1000pt);
+  width: min(100vw, 800pt);
   margin: 20px auto 0;
   display: flex;
   flex-direction: column;
