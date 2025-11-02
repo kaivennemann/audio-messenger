@@ -13,6 +13,14 @@ export class AudioToneListener {
     this.onMessageStart = null;
     this.onMessageEnd = null;
     this.onToken = null;
+    this.onErasure = null; // Callback for erasure detection
+
+    // Erasure detection state
+    this.isReceivingMessage = false;
+    this.symbolPosition = 0;
+    this.lastSymbolTime = null;
+    this.symbolTimeout = 400; // Expected time per symbol (ms): 200ms tone + 50ms gap + buffer
+    this.erasureCheckInterval = null;
   }
 
   /**
@@ -118,14 +126,85 @@ export class AudioToneListener {
     if (token) {
       // TODO: This is hardcoded for now. Change it later.
       if (token === '^') {
-        this.onMessageStart();
+        this.handleMessageStart();
       } else if (token === '$') {
-        this.onMessageEnd();
+        this.handleMessageEnd();
       } else {
-        this.onToken(token);
+        this.handleSymbol(token);
       }
     } else {
       this.detections.shift();
+    }
+  }
+
+  handleMessageStart() {
+    this.isReceivingMessage = true;
+    this.symbolPosition = 0;
+    this.lastSymbolTime = Date.now();
+    this.startErasureMonitoring();
+
+    if (this.onMessageStart) {
+      this.onMessageStart();
+    }
+  }
+
+  handleMessageEnd() {
+    this.isReceivingMessage = false;
+    this.stopErasureMonitoring();
+
+    if (this.onMessageEnd) {
+      this.onMessageEnd();
+    }
+  }
+
+  handleSymbol(token) {
+    if (this.isReceivingMessage) {
+      this.lastSymbolTime = Date.now();
+      this.symbolPosition++;
+    }
+
+    if (this.onToken) {
+      this.onToken(token);
+    }
+  }
+
+  startErasureMonitoring() {
+    this.stopErasureMonitoring(); // Clear any existing interval
+
+    this.erasureCheckInterval = setInterval(() => {
+      if (!this.isReceivingMessage) {
+        return;
+      }
+
+      const timeSinceLastSymbol = Date.now() - this.lastSymbolTime;
+
+      // If we haven't received a symbol within the expected timeframe, report erasure
+      if (timeSinceLastSymbol > this.symbolTimeout) {
+        const erasurePosition = this.symbolPosition;
+        this.symbolPosition++;
+        this.lastSymbolTime = Date.now(); // Reset to avoid multiple erasures for same position
+
+        if (this.onErasure) {
+          this.onErasure(erasurePosition);
+        }
+      }
+    }, 100); // Check every 100ms
+  }
+
+  stopErasureMonitoring() {
+    if (this.erasureCheckInterval) {
+      clearInterval(this.erasureCheckInterval);
+      this.erasureCheckInterval = null;
+    }
+  }
+
+  cleanup() {
+    this.stopErasureMonitoring();
+    if (this.source) {
+      this.source.disconnect();
+    }
+    if (this.audioContext) {
+      this.audioContext.close();
     }
   }
 }
