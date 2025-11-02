@@ -4,7 +4,7 @@ import { findClosestValidFrequency } from '../conversion/convert';
 
 const SPECIAL_TOKENS = ['^', '$', '#', '!', '&', '*'];
 const START = '^#!';
-const END = '$&*';
+const END = '$';
 const SPECIAL_LENGTH = 3;
 
 export class AudioToneListener {
