@@ -1,7 +1,6 @@
 import schema from './schema/basic.json' with { type: 'json' };
 
 import { findClosestValidFrequency } from '../conversion/convert';
-import { cauchyDecode, ERASURE_MARKER } from './cauchy.js';
 
 const SPECIAL_TOKENS = ['^', '$'];
 const START = '^';
@@ -20,14 +19,12 @@ export class AudioToneListener {
     this.onMessageStart = null;
     this.onMessageEnd = null;
     this.onToken = null;
-    this.onCorrectedMessage = null; // Called when Cauchy successfully decodes and corrects the message
 
     this.current_special = [];
 
     // Cauchy erasure code support
     this.useCauchy = useCauchy;
     this.redundancy = redundancy;
-    this.messageBuffer = [];
     this.isReceivingMessage = false;
     this.erasureTimeout = null;
     this.consecutiveErasures = 0;
@@ -161,15 +158,12 @@ export class AudioToneListener {
 
         if (token === START) {
           this.isReceivingMessage = true;
-          this.messageBuffer = [];
           this.consecutiveErasures = 0;
           this.onMessageStart();
           this.current_special = [];
         } else if (token === END) {
+          console.log('asdasd', token);
           this.onMessageEnd();
-          if (this.useCauchy && this.isReceivingMessage) {
-            this.handleCauchyDecode();
-          }
 
           if (this.erasureTimeout) {
             clearTimeout(this.erasureTimeout);
@@ -179,10 +173,6 @@ export class AudioToneListener {
           this.current_special = [];
         }
       } else {
-        // Add to buffer if using Cauchy and receiving message
-        if (this.useCauchy && this.isReceivingMessage) {
-          this.messageBuffer.push(token);
-        }
         // Always call onToken to show incoming characters
         this.onToken(token);
       }
@@ -227,62 +217,9 @@ export class AudioToneListener {
           return; // Don't continue the timeout
         }
 
-        // Mark an erasure
-        if (this.useCauchy) {
-          this.messageBuffer.push(ERASURE_MARKER);
-        }
-
         // Continue waiting for next character
         this.setupErasureTimeout();
       }
     }, this.ERASURE_TIMEOUT_MS);
-  }
-
-  /**
-   * Handle Cauchy decoding at end of message
-   */
-  handleCauchyDecode() {
-    if (this.erasureTimeout) {
-      clearTimeout(this.erasureTimeout);
-      this.erasureTimeout = null;
-    }
-
-    this.isReceivingMessage = false;
-    this.consecutiveErasures = 0;
-
-    const receivedMessage = this.messageBuffer.join('');
-    console.log(
-      'Received with erasures:',
-      receivedMessage
-        .split('')
-        .map(c => (c === ERASURE_MARKER ? '_' : c))
-        .join('')
-    );
-
-    // Calculate original length (received length - redundancy)
-    const originalLength = Math.max(
-      1,
-      this.messageBuffer.length - this.redundancy
-    );
-
-    // Attempt to decode
-    const decoded = cauchyDecode(
-      receivedMessage,
-      originalLength,
-      this.redundancy
-    );
-
-    if (decoded) {
-      console.log('Cauchy decoded successfully:', decoded);
-
-      // Emit the corrected message if callback is set
-      if (this.onCorrectedMessage) {
-        this.onCorrectedMessage(decoded);
-      }
-    } else {
-      console.error('Cauchy decode failed - too many erasures');
-    }
-
-    this.messageBuffer = [];
   }
 }
