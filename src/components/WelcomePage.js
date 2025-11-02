@@ -9,11 +9,11 @@ const WelcomePage = ({ setShowMainPage, setUsername }) => {
     const trimmed = name.trim();
     if (!trimmed) return;
     setLeaving(true);
-    // match the welcome-container transition duration (600ms) + small buffer
+    // match the welcome-container transition duration (320ms) + small buffer
     setTimeout(() => {
       setUsername(trimmed);
       setShowMainPage(true);
-    }, 640);
+    }, 130);
   };
 
   const handleKeyDown = e => {

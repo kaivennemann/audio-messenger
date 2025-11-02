@@ -136,7 +136,7 @@ export default function App() {
         {showMainPage && (
           <div className="app-container">
             <header className="header">
-              <h1 className="header-title">NoZChannel</h1>
+              <h1 className="header-title">NoyZChannel</h1>
             </header>
             <MainPage
               username={username}
