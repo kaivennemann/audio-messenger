@@ -174,7 +174,7 @@ export default function App() {
               messagingState={messagingState}
               messages={messages}
               sendMessage={sendMessage}
-              incomingMessage={currentMessage}
+              incomingMessage={{content: currentMessage, sender: receivedUsername}}
             />
           </div>
         )}
