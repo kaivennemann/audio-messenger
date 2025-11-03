@@ -1,6 +1,6 @@
 # NoyZChannel
 
-NoyZChannel is a messenger app that transmits text messages by encoding them into high-pitched audio sounds and playing them out. Any device in audible distance can then receive the broadcast message. A demo can be found [here](https://kaivennemann.github.io/noyzchannel/). This project was submitted to Cam Hack 2025, the annual Cambridge hackathon.
+NoyZChannel is a messaging app that transmits text messages by encoding them into high-pitched audio sounds and playing them out loud. Any device within audible distance can then receive the broadcast message. The app works offline as well. A demo can be found [here](https://kaivennemann.github.io/noyzchannel/). This project was submitted to Cam Hack 2025, the annual Cambridge hackathon.
 
 ### Setup
 
