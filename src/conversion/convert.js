@@ -1,7 +1,7 @@
 import schema from './schema/basic.json' with { type: 'json' };
 
 export function convertFromTextToHz(data) {
-  data = '^#' + data + '$$$';
+  data = '^^^' + data + '$$$';
 
   const arredData = data.split('');
 
