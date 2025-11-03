@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/audio-messenger/static/css/main.2991c035.css",
-    "main.js": "/audio-messenger/static/js/main.b5eb02cf.js",
-    "static/js/453.2cae2a10.chunk.js": "/audio-messenger/static/js/453.2cae2a10.chunk.js",
-    "index.html": "/audio-messenger/index.html",
-    "main.2991c035.css.map": "/audio-messenger/static/css/main.2991c035.css.map",
-    "main.b5eb02cf.js.map": "/audio-messenger/static/js/main.b5eb02cf.js.map",
-    "453.2cae2a10.chunk.js.map": "/audio-messenger/static/js/453.2cae2a10.chunk.js.map"
+    "main.css": "/noyzchannel/static/css/main.2991c035.css",
+    "main.js": "/noyzchannel/static/js/main.d8c4269b.js",
+    "static/js/453.d534a86f.chunk.js": "/noyzchannel/static/js/453.d534a86f.chunk.js",
+    "index.html": "/noyzchannel/index.html",
+    "main.2991c035.css.map": "/noyzchannel/static/css/main.2991c035.css.map",
+    "main.d8c4269b.js.map": "/noyzchannel/static/js/main.d8c4269b.js.map",
+    "453.d534a86f.chunk.js.map": "/noyzchannel/static/js/453.d534a86f.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.2991c035.css",
-    "static/js/main.b5eb02cf.js"
+    "static/js/main.d8c4269b.js"
   ]
 }
