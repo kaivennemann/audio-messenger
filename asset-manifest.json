@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/noyzchannel/static/css/main.2991c035.css",
-    "main.js": "/noyzchannel/static/js/main.04d586dc.js",
+    "main.js": "/noyzchannel/static/js/main.861de5ec.js",
     "static/js/453.d534a86f.chunk.js": "/noyzchannel/static/js/453.d534a86f.chunk.js",
     "index.html": "/noyzchannel/index.html",
     "main.2991c035.css.map": "/noyzchannel/static/css/main.2991c035.css.map",
-    "main.04d586dc.js.map": "/noyzchannel/static/js/main.04d586dc.js.map",
+    "main.861de5ec.js.map": "/noyzchannel/static/js/main.861de5ec.js.map",
     "453.d534a86f.chunk.js.map": "/noyzchannel/static/js/453.d534a86f.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.2991c035.css",
-    "static/js/main.04d586dc.js"
+    "static/js/main.861de5ec.js"
   ]
 }
